@@ -85,41 +85,41 @@ import Control.Monad.Except
 %right at not bnot incr decr unplus unminus
 %%
 
-Inst : at Expr '=' Expr '.'        { Lam $1 $3 }
-	 | flag NUM  '.'               { $2 }
-	 | goto Expr '.'               { $2 }
-	 | if   Expr beg Insts     Elses1 {  }
-	 | '?>' Expr '[' Insts ']' Elses2 {  }
-	 | if   Expr '[' Insts ']' Elses3 {  }
-	 | loop Expr Block             { }
-	 | stop                        { }
-	 | print Expr '.'              { }
+Inst : at Expr '=' Expr '.' { Assign $2 $4 }
+	 | flag NUM  '.'        { Flag   $2 }
+	 | goto Expr '.'        { Goto   $2 }
+	 | loop Expr Block      { Loop   $2 $3 }
+	 | stop                 { stop }
+	 | print Expr '.'       { print  $2 }
+	 | if   Expr beg Insts     Elses1 { If  $2 $4 $5 }
+	 | '?>' Expr '[' Insts ']' Elses2 { If  $2 $4 $6 }
+	 | if   Expr '[' Insts ']' Elses3 { If  $2 $4 $6 }
 
 Block : beg Insts end { $2 }
 	  | '[' Insts ']' { $2 }
 
-Insts : {- empty -}
-	  | Inst Insts
+Insts : {- empty -} { [] }
+	  | Inst Insts  { $1 : $2 }
 
-Elses1 : end
-	  | else            Insts Elses1
-	  | elseif Expr beg Insts Elses1
+Elses1 : end                         { [] }
+	  | else            Insts end    { Else   $2 }
+	  | elseif Expr beg Insts Elses1 { ElseIf $2 $4 $5 }
 
-Elses2 : {- empty -}
-	   | '?'      '[' Insts ']' Elses2
-	   | '?' Expr '[' Insts ']' Elses2
+Elses2 : {- empty -}                   { [] }
+	   | '?'      '[' Insts ']'        { Else   $3 }
+	   | '?' Expr '[' Insts ']' Elses2 { ElseIf $2 $4 $6 }
 
-Elses3 : {- empty -}
-	   | else        '[' Insts ']' Elses3
-	   | elseif Expr '[' Insts ']' Elses3
+Elses3 : {- empty -}                      { [] }
+	   | else        '[' Insts ']'        { Else   $3 }
+	   | elseif Expr '[' Insts ']' Elses3 { ElseIf $2 $4 $6 }
 
-Expr : at   Expr { $2 }
-	 | not  Expr { $2 }
-	 | bnot Expr { $2 }
-	 | incr Expr { $2 }
-	 | decr Expr { $2 }
-	 | '+' Expr %prec unplus  { $2 }
-	 | '-' Expr %prec unminus { $2 }
+Expr : at   Expr { At      $2 }
+	 | not  Expr { Op Not  $2 }
+	 | bnot Expr { Op BNot $2 }
+	 | incr Expr { Op Incr $2 }
+	 | decr Expr { Op Decr $2 }
+	 | '+' Expr %prec unplus  { Op Abs $2 }
+	 | '-' Expr %prec unminus { Op Neg $2 }
 	 | '('  Expr ')'   { $2 }
      | Expr '+'   Expr { Op Add      $1 $3 }
      | Expr '-'   Expr { Op Sub      $1 $3 }

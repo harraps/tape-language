@@ -21,8 +21,6 @@ $special = [\.\;\,\$\|\*\+\?\#\~\-\{\}\(\)\[\]\^\/]
 $graphic = $printable # $white
 
 @string = \" ($graphic # \")* \"
-@char = ($graphic # $special) | @escape
-@escape = ’\\’ ($printable | ’x’ $hexdig+ | ’o’ $octdig+ | $digit+)
 @code = -- curly braces surrounding a Haskell code fragment
 
 tokens :-
