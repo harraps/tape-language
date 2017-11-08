@@ -1,0 +1,63 @@
+# single line comment
+
+#[ multiline comment ]#
+
+# preprocessor
+[!]		DEFINE
++		UNSIGNED
+-		SIGNED
+8		BYTE
+16		SHORT
+# computers of today don't have 17 GB of RAM
+# so we cannot support 32	INT
+
+# instructions
+=		ASSIGN
+$		PRINT
+::		FLAG
+:>		GOTO
+?>		IF
+?		ELSE
+@>		LOOP
+|>		STOP
+[		DO
+]		END
+.		period
+
+# expressions
+@		AT
++		ADD
+-		SUB
+*		MUL
+/		DIV
+%		MOD
+++		INCR
+--		DECR
+!		NOT
+&&		AND
+||		OR
+^^		XOR
+!&&		NAND
+!||		NOR
+!^^		XNOR
+==		EQUALS
+!=		DIFF
+>		GREATER
+<		LESSER
+>=		EQUGREAT
+<=		EQULESS
+(		lpar
+)		rpar
+~		bnot
+&		band
+|		bor
+^		bxor
+~&		bnand
+~|		bnor
+~^		bxnor
+
+# value
+10
+0xff
+'c'
+"string" # special case
