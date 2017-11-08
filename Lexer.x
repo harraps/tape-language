@@ -48,15 +48,18 @@ tokens :-
   (PRINT   | '$' ) { \s -> TokenPrint   }
   (FLAG    | "::") { \s -> TokenFlag    }
   (GOTO    | ":>") { \s -> TokenGoto    }
-  (IF      | "?>") { \s -> TokenIf      }
-  (ELSE    | '?' ) { \s -> TokenElse    }
   (LOOP    | "@>") { \s -> TokenLoop    }
   (STOP    | "|>") { \s -> TokenStop    }
-  DO  { \s -> TokenBlockBegin1 }
-  '[' { \s -> TokenBlockBegin2 }
-  END { \s -> TokenBlockEnd1   }
-  ']' { \s -> TokenBlockEnd2   }
-  '.' { \s -> TokenInstrEnd    }
+  IF     { \s -> TokenIf1         }
+  "?>"   { \s -> TokenIf2         }
+  ELSE   { \s -> TokenElse1       }
+  '?'    { \s -> TokenElse2       }
+  ELSEIF { \s -> TokenElseIf      }
+  DO     { \s -> TokenBlockBegin1 }
+  '['    { \s -> TokenBlockBegin2 }
+  END    { \s -> TokenBlockEnd1   }
+  ']'    { \s -> TokenBlockEnd2   }
+  '.'    { \s -> TokenInstrEnd    }
 
   -- Expressions
   (AT   | '@'  ) { \s -> TokenAt   }
@@ -102,10 +105,13 @@ data Token
   | TokenPrint
   | TokenFlag 
   | TokenGoto
-  | TokenIf   
-  | TokenElse
   | TokenLoop 
   | TokenStop
+  | TokenIf1
+  | TokenIf2   
+  | TokenElse1
+  | TokenElse2
+  | TokenElseIf
   | TokenBlockBegin1 
   | TokenBlockBegin2 
   | TokenBlockEnd1 
