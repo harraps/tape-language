@@ -1,2 +1,2 @@
 # tape-language
-compiler for the TAPE language made in Haskell
+compiler for the TAPE language made with jison and coffeescript
