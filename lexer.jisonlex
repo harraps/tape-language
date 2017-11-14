@@ -1,12 +1,18 @@
 %%
 \s+                 {/* skip white space */}
 #.*                 {/* ignore comments  */}
+"DEFINE"|"[#]"      return 'DEFINE';
+"SIGNED"            return 'SIGNED';
+"UNSIGNED"          return 'UNSIGNED';
+"BYTE"              return 'BYTE';
+"WORD"              return 'WORD';
 [0-9]+              return 'DECIMAL';
 b(0|1)+             return 'BINARY';
 o[0-7]+             return 'OCTAL';
 x[0-9a-fA-F]+       return 'HEXADECIMAL';
 "ASSIGN"|"="        return '=';
-"PRINT"|"$"         return 'PRINT'; 
+"PRINT"|"$$"        return 'PRINT';
+"DISPLAY"|"$"       return 'DISPLAY';
 "FLAG"|"::"         return 'FLAG';
 "GOTO"|":>"         return 'GOTO';
 "LOOP"|"@>"         return 'LOOP';
@@ -20,6 +26,7 @@ x[0-9a-fA-F]+       return 'HEXADECIMAL';
 "END"               return 'END';
 "["                 return '[';
 "]"                 return ']';
+","                 return ',';
 "."                 return '.';
 "AT"|"@"            return 'AT';
 "ADD"|"+"           return '+';
