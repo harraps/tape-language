@@ -1,2 +1,7 @@
 # tape-language
 compiler for the TAPE language made with jison and coffeescript
+
+compile the coffee-scripts:
+coffee -c file.coffee
+
+compile the jison:

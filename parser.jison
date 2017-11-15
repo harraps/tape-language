@@ -8,9 +8,13 @@
 %left  '&' '|' '^' '~&' '~|' '~^' '<<' '>>'
 %right AT '!' '~' '++' '--' unplus unminus
 
-%start program
+%start program2
 
 %%
+
+program2
+    : {return null;}
+    ;
 
 program 
     : def instrs EOF { return _program($1, $2); }

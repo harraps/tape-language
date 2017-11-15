@@ -1,6 +1,6 @@
 # comment
 
-DEFINE UNSIGNED BYTE
+DEFINE UNSIGNED BYTE.
 
 FLAG 0.
 
@@ -22,7 +22,7 @@ GOTO 0.
 
 # comment again
 
-[!]	+8
+[#]	+8.
 
 :: 0.
 

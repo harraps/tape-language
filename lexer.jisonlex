@@ -1,3 +1,5 @@
+%options flex
+
 %%
 \s+                 {/* skip white space */}
 #.*                 {/* ignore comments  */}
@@ -61,4 +63,4 @@ x[0-9a-fA-F]+       return 'HEXADECIMAL';
 "LSHIFT"|"<<"       return '<<';
 "RSHIFT"|">>"       return '>>';
 <<EOF>>             return 'EOF';
-
+.                   return 'INVALID';

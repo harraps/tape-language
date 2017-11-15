@@ -1,3 +1,6 @@
+# get access to the global scope
+GLOBAL = window or exports
+
 class Tape 
     constructor: (@type) ->
         # used to store the data
@@ -31,6 +34,10 @@ class Tape
 
 TAPE = null
 INSTRUCTIONS = []
+
+GLOBAL.tape_lang =
+    tape: TAPE
+    instructions: INSTRUCTIONS
 
 # unary
 AT   = (i) -> TAPE.g i
@@ -81,27 +88,27 @@ class Instruction
     print: -> "instruction undefined"
 
 class Assign extends Instruction
-    constructor: (@cell, @value) ->
+    constructor: (@cell, @value) -> super()
     print: -> "at #{@cell} assign #{@value.print()}"
 
 class Increment extends Instruction
-    constructor: (@cell) ->
+    constructor: (@cell) -> super()
     print: -> "increment value at #{@cell}"
 
 class Decrement extends Instruction
-    constructor: (@cell) ->
+    constructor: (@cell) -> super()
     print: -> "decrement value at #{@cell}"
 
 class Flag extends Instruction
-    constructor: (@id) ->
+    constructor: (@id) -> super()
     print: -> "flag #{@id.print()}"
 
 class Goto extends Instruction
-    constructor: (@id) ->
+    constructor: (@id) -> super()
     print: -> "go to flag #{@id.print()}"
 
 class Print extends Instruction
-    constructor: (@type, @value, @range) ->
+    constructor: (@type, @value, @range) -> super()
     print: -> switch @type
         when 0 then "display #{@value.print()}" # display
         when 1 then "print #{@value.print()}"   # print char
@@ -109,7 +116,7 @@ class Print extends Instruction
             up to #{@range.print()} characters" # print range
 
 class If extends Instruction
-    constructor: (@conds, @blocks) ->
+    constructor: (@conds, @blocks) -> super()
     print: ->
         strings = []
         for [cond, block] in zip(@conds, @blocks)
@@ -117,7 +124,7 @@ class If extends Instruction
         return strings.join()
 
 class Loop extends Instruction
-    constructor: (@cond, @block) ->
+    constructor: (@cond, @block) -> super()
     print: -> "loop while #{@cond.print()} and do #{block.print()}"
 
 class Stop extends Instruction
@@ -125,9 +132,7 @@ class Stop extends Instruction
 
 class Op 
     constructor: (@op, @left, @right) ->
-        # incr and decr change the value in the tape when used
-        if @op == INCR or @op == DECR
-            if @left instanceof Op and Op.op == AT
+    print: -> "operate #{@op} on #{@left.print()} and #{@right.print()}"
 
 
 _program = (def, instrs) -> INSTRUCTIONS = instrs
