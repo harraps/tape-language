@@ -3,7 +3,7 @@
 #[ multiline comment ]#
 
 # preprocessor
-[!]		DEFINE
+[#]		DEFINE
 +		UNSIGNED
 -		SIGNED
 8		BYTE
@@ -13,7 +13,8 @@
 
 # instructions
 =		ASSIGN
-$		PRINT
+$$  	PRINT
+$       DISPLAY
 ::		FLAG
 :>		GOTO
 ?>		IF
@@ -22,7 +23,7 @@ $		PRINT
 |>		STOP
 [		DO
 ]		END
-.		period
+.		end instruction
 
 # expressions
 @		AT
@@ -46,18 +47,20 @@ $		PRINT
 <		LESSER
 >=		EQUGREAT
 <=		EQULESS
-(		lpar
-)		rpar
-~		bnot
-&		band
-|		bor
-^		bxor
-~&		bnand
-~|		bnor
-~^		bxnor
+(		left  parenthesis
+)		right parenthesis
+~		BNOT
+&		BAND
+|		BOR
+^		BXOR
+~&		BNAND
+~|		BNOR
+~^		BXNOR
 
 # value
 10
-0xff
+xff
+o777
+b0101
 'c'
 "string" # special case

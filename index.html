@@ -1,13 +1,22 @@
 <!DOCTYPE html>
 <head>
     <!-- order matters ! -->
-    <script src="ASTbuilder.js"></script>
-    <script src="parser.js"></script>
+    <script src="definition.js"></script>
+    <script src="tape.js"></script>
 </head>
 <body>
     <script>
-        console.log(parser.parse(
-            ""
-        ));    
+        var prog = "※ UNSIGNED word."
+            +"at 0 = 10."
+            +"at at 0 = 45 + x5 × @30."
+            +"?> @1 equals @2 ["
+            +"  @@3 = ++@3."
+            +"}"
+            +"🏳️ 0."
+            +"go  to 0;"
+            +"@> 0 != @1 DO ++@1. ⏏ END";
+        console.log(tape.parse(
+            prog
+        ));
     </script>
 </body>
