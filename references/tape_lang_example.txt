@@ -1,0 +1,163 @@
+# WORD SYNTAX:
+
+# single line
+#( multi line )#
+
+DEFINE UNSIGNED BYTE. # types: UNSIGNED/SIGNED BYTE/WORD
+
+AT 1 ASSIGN 0. # assign
+
+IF 1 DO 
+    # stuff...
+END
+
+IF      1 DO # stuff...
+ELSE IF 2 DO # stuff...
+ELSE         # stuff...
+END
+
+LOOP 
+    # stuff...
+    BREAK
+END
+
+LOOP 1 DO 
+    # stuff...
+END
+
+FLAG  0. # set flag
+GO TO 0. # go to flag
+
+BELL 100.     # ring bell
+DISPLAY 0.    # display value
+AT 1 PRINT 1. # print string
+
+#(
+    ADD, SUB, MUL, DIV, MOD
+    NOT, AND,  OR, XOR, NAND, NOR, XNOR
+    INCR, DECR
+)#
+"" # string
+
+
+# SYMBOL SYNTAX:
+
+
+# single line
+#( multi line )#
+
+<$> + 8. # types: +/- 8/16
+
+@ 1 := 0. # assign
+
+? 1 { 
+    # stuff...
+}
+
+? 1 { # stuff...
+} 2 { # stuff...
+}   { # stuff...
+}
+
+[
+    # stuff...
+    <>
+]
+
+1 [
+    # stuff...
+]
+
+|> 0. # set flag
+-> 0. # go to flag
+
+><  100.  # wait milliseconds
+(*) 100.  # ring bell
+$ 0.      # display value
+@ 1 $$ 1. # print string
+
+#(
+    + - * / %
+    ! && || ^^ !& !| !^
+    ++ --
+    ~  &  |  ^ ~& ~| ~^
+    << >>
+)#
+"" # string
+
+
+# SYMBOL SYNTAX:
+
+
+❦ single line
+☙ multi line ❧
+
+※ ☎☻. ❦ types: ☎/☏ ☻/☺
+
+★ 1 ≔ 0. ❦ assign
+
+❦ no specific syntax for if
+
+♺
+    ❦ stuff...
+    ⭍
+❢
+
+⚑ 0.  # set flag
+➽ 0. # go to flag
+
+⧗ 100.    ❦ wait milliseconds
+♫ 100.    ❦ ring bell
+👁 0.      ❦ display value
+★ 1 ❡ 1. ❦ print string
+
+☙
+    + - × ÷ mod
+    ¬ ∧ ∨ ⊻ ⊼ ⊽ ≡
+
+    ⭜ incr    ⭝ decr
+    ☚ lshift  ☛ rshift
+❧
+❝❞ ❦ string
+
+
+# EMOJI SYNTAX:
+
+
+💭 single line
+🌜 multi line 🌛
+
+📯 📸💿. 💭 types: 📷/📸 💿/📀
+
+📌 1 ✍️ 0. 💭 assign
+
+❔ 1 🔛
+    💭 stuff...
+🔚
+
+❔ 1 🔛 💭 stuff...
+❓ 2 🔛 💭 stuff...
+❓   🔛 💭 stuff...
+🔚
+
+🔄
+    💭 stuff...
+    🛑
+🔚
+
+🔄 1 🔛
+    💭 stuff...
+🔚
+
+🚩 0. 💭 set flag
+💨 0. 💭 go to flag
+
+⏳ 100.     💭 wait in milliseconds
+🔔 100.     💭 ring bell
+👁️ 0.       💭 display value
+📌 1 👀 1. 💭 print string
+
+🌜
+    👍incr    👎decr
+    ⏪lshift  ⏩rshift
+🌛
