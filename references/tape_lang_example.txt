@@ -1,3 +1,15 @@
+#(
+    values declaration:
+    10      : decimal
+    xFF     : hexadecimal
+    o777    : octal
+    b0101   : binary
+    'c'     : character
+    "hello" : string*
+
+    (*): string is the only type that affect the values to multiple cells
+)#
+
 # WORD SYNTAX:
 
 # single line
@@ -18,7 +30,7 @@ END
 
 LOOP 
     # stuff...
-    BREAK
+    STOP
 END
 
 LOOP 1 DO 
@@ -28,6 +40,7 @@ END
 FLAG  0. # set flag
 GO TO 0. # go to flag
 
+WAIT 100.     # wait in milliseconds
 BELL 100.     # ring bell
 DISPLAY 0.    # display value
 AT 1 PRINT 1. # print string
@@ -61,7 +74,7 @@ AT 1 PRINT 1. # print string
 
 [
     # stuff...
-    <>
+    \
 ]
 
 1 [
@@ -71,10 +84,10 @@ AT 1 PRINT 1. # print string
 |> 0. # set flag
 -> 0. # go to flag
 
-><  100.  # wait milliseconds
-(*) 100.  # ring bell
-$ 0.      # display value
-@ 1 $$ 1. # print string
+><  100. # wait milliseconds
+(*) 100. # ring bell
+$  0.    # display value
+$$ 1.    # print string
 
 #(
     + - * / %
@@ -101,19 +114,19 @@ $ 0.      # display value
 ♺
     ❦ stuff...
     ⭍
-❢
+•
 
 ⚑ 0.  # set flag
 ➽ 0. # go to flag
 
-⧗ 100.    ❦ wait milliseconds
-♫ 100.    ❦ ring bell
-👁 0.      ❦ display value
-★ 1 ❡ 1. ❦ print string
+⧗ 100.  ❦ wait milliseconds
+♫ 100.  ❦ ring bell
+👁 0.   ❦ display value
+❡ 1.    ❦ print string
 
 ☙
     + - × ÷ mod
-    ¬ ∧ ∨ ⊻ ⊼ ⊽ ≡
+    ¬ ∧ ∨ ⊕ ⊼ ⊽ ≡
 
     ⭜ incr    ⭝ decr
     ☚ lshift  ☛ rshift
@@ -152,10 +165,10 @@ $ 0.      # display value
 🚩 0. 💭 set flag
 💨 0. 💭 go to flag
 
-⏳ 100.     💭 wait in milliseconds
-🔔 100.     💭 ring bell
-👁️ 0.       💭 display value
-📌 1 👀 1. 💭 print string
+⏳ 100.  💭 wait in milliseconds
+🔔 100. 💭 ring bell
+👁️ 0.   💭 display value
+👀 1.   💭 print string
 
 🌜
     👍incr    👎decr

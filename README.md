@@ -5,4 +5,4 @@ compile the coffee-scripts:
 coffee -c definition.coffee
 
 compile the jison:
-jison tape.jison tape.jisonlex
+jison tape.jison
