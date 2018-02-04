@@ -5,11 +5,6 @@
     1 : WORDS
     2 : ASCII
     3 : SYMBOLS
-    4 : EMOJIS
-
-    TODO: add tokenizer for multiline comments and strings:
-    #()# ☙❧ 🌜🌛
-    "" ❝❞
 */
 
 %lex
@@ -17,106 +12,93 @@
 
 %%
 
-\s+                {/* skip white space */}
-("#"|"❦"|"💭").*  {/* ignore comments  */}
+\s+           {/* skip white space */}
+("#"|"❦").*  {/* ignore comments  */}
+"#(".*")#"    {/* ignore comments  */}
+"☙".*"❧"    {/* ignore comments  */}
 
-"DEFINE"|"<$>"|"※"|"📯" return 'DEFINE';
+"use"\s*"8"\s*"bits"|"[8]"   return 'DEFINE_8';
+"use"\s*"16"\s*"bits"|"[16]" return 'DEFINE_16';
 
-"UNSIGNED"|"☏"|"📷" return 'UNSIGNED';
-"SIGNED"|"☎"|"📸"   return 'DEFINE';
+[A-Za-z_][A-Za-z0-9_]*\b return 'NAME';
+[0-9]+\b                 return 'DECIMAL';
+"0b"[0-1]+\b             return 'BINARY';
+"0o"[0-7]+\b             return 'OCTAL';
+"0x"[0-9a-fA-F]+\b       return 'HEXADECIMAL';
+"'"."'"                  return 'CHARACTER';
 
-"BYTE"|"☎"|"💿" return 'BYTE';
-"WORD"|"☻"|"📀" return 'WORD';
+"\"".*"\"" return 'STRING';
+"❝".*"❞"   return 'STRING';
 
-[0-9]+\b          return 'DECIMAL';
-"b"[0-1]+\b       return 'BINARY';
-"o"[0-7]+\b       return 'OCTAL';
-"x"[0-9a-fA-F]+\b return 'HEXADECIMAL';
-"'"."'"           return 'CHARACTER';
+"(" return '(';
+")" return ')';
+"," return ',';
 
-"ASSIGN"|":="|"≔"|"✍️" return 'ASSIGN';
+"do"  return 'DO';
+"end" return 'END';
 
-"DO"  return 'BEGIN1';
-"{"   return 'BEGIN2';
-"🔛" return 'BEGIN4';
+"if"          return 'IF';
+"else"\s*"if" return 'ELSEIF';
+"else"        return 'ELSE';
+"?"           return '?';
+"{"           return '{';
+"}"           return '}';
 
-"END" return 'END1';
-"}"   return 'END2';
-"•"   return 'END3';
-"🔚" return 'END4';
+"while" return 'WHILE';
+"loop"  return 'LOOP';
+"retry" return 'RETRY';
+"stop"  return 'STOP';
+"["     return '[';
+"]"     return ']';
+"<|"    return '<|';
+"|>"    return '|>';
 
-"IF" return 'IF1';
-"?"  return 'IF2';
-"❔" return 'IF4';
-
-"ELSE"\s*"IF" return 'ELSEIF1';
-"❓"          return 'ELSEIF4';
-
-"ELSE" return 'ELSE';
-
-"LOOP" return 'LOOP1';
-"♺"   return 'LOOP3';
-"🔄"  return 'LOOP4';
-
-"["   return 'LOOPBEGIN';
-"]"   return 'LOOPEND';
-
-"STOP"|"\\>"|"⭍"|"🛑" return 'STOP';
-"RETRY"|"\\<"          return 'RETRY';
-
-"FLAG"|"|>"|"⚑"|"🚩"       return 'FLAG';
-"GO"\s*"TO"|"->"|"➽"|"💨" return 'GOTO';
-
-"WAIT"|"><"|"⧗"|"⏳"     return 'WAIT';
-"BELL"|"(*)"|"♫"|"🔔"   return 'BELL';
-"DISPLAY"|"$"|"👁"|"👁️" return 'DISPLAY';
-"PRINT"|"$$"|"❡"|"👀"   return 'PRINT';
-
+"=" return '=';
 "." return '.';
 
-"AT"|"@"|"★"|"📌" return 'AT';
+"wait"|"(%)"|"⧗"   return 'WAIT';
+"bell"|"(*)"|"♫"   return 'BELL';
+"print"|"(&)"|"❡"  return 'PRINT';
 
-"ADD"|"+"       return '+';
-"SUB"|"-"       return '-';
-"MUL"|"*"|"×"   return '*';
-"DIV"|"/"|"÷"   return '/';
-"MOD"|"%"|"mod" return '%';
+"at"|"@"  return 'AT';
+"reg"|"$" return 'REG';
 
-"INCR"|"++"|"⭜"|"👍" return 'INCR';
-"DECR"|"--"|"⭝"|"👎" return 'DECR';
+"+"       return '+';
+"-"       return '-';
+"*"|"×"   return '*';
+"/"|"÷"   return '/';
+"%"|"mod" return '%';
 
-"NOT"|"!"|"¬"    return 'NOT';
-"AND"|"&&"|"∧"   return 'AND';
-"OR"|"||"|"∨"    return 'OR';
-"XOR"|"^^"|"⊕"  return 'XOR';
-"NAND"|"!&"|"⊼"  return 'NAND';
-"NOR"|"!|"|"⊽"   return 'NOR';
-"XNOR"|"!^"|"≡"  return 'XNOR';
+"++"|"⭜" return 'INCR';
+"--"|"⭝" return 'DECR';
 
-"=="|"=" return '==';
-"!="|"≠" return '!=';
-">"      return '>';
-"<"      return '<';
-">="|"≥" return '>=';
-"<="|"≤" return '<=';
+"not"|"!"|"¬"    return 'NOT';
+"and"|"&&"|"∧"   return 'AND';
+"or"|"||"|"∨"    return 'OR';
+"xor"|"^^"|"⊕"  return 'XOR';
+"nand"|"!&"|"⊼"  return 'NAND';
+"nor"|"!|"|"⊽"   return 'NOR';
+"xnor"|"!^"|"≡"  return 'XNOR';
 
-"~"         return 'BNOT';
-"&"         return 'BAND';
-"|"         return 'BOR';
-"^"         return 'BXOR';
-"~&"        return 'BNAND';
-"~|"        return 'BNOR';
-"~^"        return 'BXNOR';
-"<<"|"⏪"  return 'LSHIFT';
-">>"|"⏩"  return 'RSHIFT';
+"==" return '==';
+"!=" return '!=';
+">"  return '>';
+"<"  return '<';
+">=" return '>=';
+"<=" return '<=';
 
-"(" return 'LPAR1';
-")" return 'RPAR1';
-"⟨" return 'LPAR2';
-"⟩" return 'RPAR2';
+"~"  return 'BNOT';
+"&"  return 'BAND';
+"|"  return 'BOR';
+"^"  return 'BXOR';
+"~&" return 'BNAND';
+"~|" return 'BNOR';
+"~^" return 'BXNOR';
+"<<" return 'LSHIFT';
+">>" return 'RSHIFT';
 
-<<EOF>>             return 'EOF';
-.                   return 'INVALID';
+<<EOF>> return 'EOF';
+.       return 'INVALID';
 
 /lex
 
@@ -135,74 +117,67 @@
 %%
 
 program 
-    : def instrs EOF { return TAPE.formaters._program($1, $2); }
+    : def funcs EOF { return TAPE.formaters._program($1, $2); }
     ;
 
 def
-    : DEFINE SIGNED   BYTE '.' { $$ = TAPE.formaters._define( -8); }
-    | DEFINE UNSIGNED BYTE '.' { $$ = TAPE.formaters._define(  8); }
-    | DEFINE SIGNED   WORD '.' { $$ = TAPE.formaters._define(-16); }
-    | DEFINE UNSIGNED WORD '.' { $$ = TAPE.formaters._define( 16); }
-    | DEFINE '-' number    '.' { $$ = TAPE.formaters._define(-$3); }
-    | DEFINE '+' number    '.' { $$ = TAPE.formaters._define( $3); }
+    : DEFINE_8  { $$ = TAPE.formaters._define( 8); }
+    | DEFINE_16 { $$ = TAPE.formaters._define(16); }
+    ;
+
+funcs
+    : 
+    | funcs func { $$ = TAPE.formaters._functions($1, $2); }
+    ;
+func
+    : NAME "(" instrs ")" { $$ = new TAPE.types.Function($1  , $3); }
+    |      "(" instrs ")" { $$ = new TAPE.types.Function(null, $3); }
     ;
 
 instrs
     : 
     | instrs instr { $$ = TAPE.formaters._instructions($1, $2); }
     ;
-
 instr 
-    : AT expr ASSIGN expr '.' { $$ = new TAPE.types.Assign($2, $4); }
-    | INCR AT expr   '.' { $$ = TAPE.formaters._incr(1, $3); }
-    | INCR AT expr   '.' { $$ = TAPE.formaters._decr(1, $3); }
-    | FLAG    number '.' { $$ = new TAPE.types.Flag($2); }
-    | GOTO    expr   '.' { $$ = new TAPE.types.Goto($2); }
-    | WAIT    expr   '.' { $$ = new TAPE.actions.WAIT($2, function(){}); }
-    | BELL    expr   '.' { $$ = new TAPE.actions.BELL($2, sound);        }
-    | DISPLAY expr   '.' { $$ = new TAPE.actions.Print($2);              }
-    | PRINT   expr   '.' { $$ = new TAPE.actions.Print($2);              }
-    | IF1   expr BEGIN1 instrs      elses1 { $$ = TAPE.formaters._if($2, $4, $5); }
-    | IF2   expr BEGIN2 instrs END2 elses2 { $$ = TAPE.formaters._if($2, $4, $6); }
-    | IF4   expr BEGIN4 instrs      elses4 { $$ = TAPE.formaters._if($2, $4, $6); }
-    | LOOP1 expr BEGIN1 instrs END1  { $$ = new TAPE.types.Loop($2  , $4); }
-    | LOOP4 expr BEGIN4 instrs END4  { $$ = new TAPE.types.Loop($2  , $4); }
-    | LOOP1 instrs END1              { $$ = new TAPE.types.Loop(null, $2); }
-    | LOOP3 instrs END3              { $$ = new TAPE.types.Loop(null, $2); }
-    | LOOP4 instrs END4              { $$ = new TAPE.types.Loop(null, $2); }
-    |      LOOPBEGIN  instrs LOOPEND { $$ = new TAPE.types.Loop(null, $2); }
-    | expr LOOPBEGIN  instrs LOOPEND { $$ = new TAPE.types.Loop($1  , $3); }
-    | STOP  { $$ = new TAPE.types.Break(true ); }
-    | RETRY { $$ = new TAPE.types.Break(false); }
+    : var ASSIGN expr '.' { $$ = new TAPE.types.Assign(false, $2, $4); }
+    | INCR  var  '.' { $$ = new TAPE.types.Increment($2); }
+    | DECR  var  '.' { $$ = new TAPE.types.Decrement($2); }
+    | WAIT  expr '.' { $$ = new TAPE.types.Action(TAPE.actions.WAIT , $2); }
+    | BELL  expr '.' { $$ = new TAPE.types.Action(TAPE.actions.BELL , $2); }
+    | PRINT expr '.' { $$ = new TAPE.types.Action(TAPE.actions.PRINT, $2); }
+    | IF  expr DO  instrs     elses1 { $$ = TAPE.formaters._if($2, $4, $5); }
+    | "?" expr "{" instrs "}" elses2 { $$ = TAPE.formaters._if($2, $4, $6); }
+    | WHILE expr DO  instrs END      { $$ = TAPE.formaters._loop(true , $2  , $4); }
+    |       expr "[" instrs "]"      { $$ = TAPE.formaters._loop(false, $2  , $4); }
+    | LOOP instrs END                { $$ = TAPE.formaters._loop(true , null, $2); }
+    | "["  instrs "]"                { $$ = TAPE.formaters._loop(false, null, $2); }
+    | RETRY { $$ = TAPE.formaters._break(true , false); }
+    | STOP  { $$ = TAPE.formaters._break(true , true ); }
+    | "<|"  { $$ = TAPE.formaters._break(false, false); }
+    | "|>"  { $$ = TAPE.formaters._break(false, true ); }
     ;
-
 elses1 
-    : END1
-    | ELSE1 instrs END1                 { $$ = TAPE.formaters._else($2); }
-    | ELSEIF1 expr BEGIN1 instrs elses1 { $$ = TAPE.formaters._elseif($2, $4, $5); }
+    : END
+    | ELSE           instrs END    { $$ = TAPE.formaters._else($2); }
+    | ELSEIF expr DO instrs elses1 { $$ = TAPE.formaters._elseif($2, $4, $5); }
     ;
 elses2 
     :
-    | BEGIN2 instrs END2             { $$ = TAPE.formaters._else($2); }
-    | expr BEGIN2 instrs END2 elses2 { $$ = TAPE.formaters._elseif($1, $3, $5); }
+    |      "{" instrs "}"        { $$ = TAPE.formaters._else($2); }
+    | expr "{" instrs "}" elses2 { $$ = TAPE.formaters._elseif($1, $3, $5); }
     ;
-elses4 
-    : END4
-    | ELSE4 instrs END4                 { $$ = TAPE.formaters._else($2); }
-    | ELSEIF4 expr BEGIN4 instrs elses4 { $$ = TAPE.formaters._elseif($2, $4, $5); }
+var
+    : AT  expr   { $$ = new TAPE.types.Variable(false, $2); }
+    | REG number { $$ = new TAPE.types.Variable(true , $2); }
     ;
 
 expr 
-    : number { $$ = $1; }
-    | AT expr { $$ = new TAPE.types.Monadic(TAPE.op.AT, $2); }
-    | LPAR1 expr RPAR1 { $$ = $2; }
-    | LPAR2 expr RPAR2 { $$ = $2; }
-	| NOT  expr { $$ = new TAPE.types.Monadic(TAPE.op.NOT , $2); }
-	| BNOT expr { $$ = new TAPE.types.Monadic(TAPE.op.BNOT, $2); }
-    | INCR AT expr { $$ = TAPE.formaters._incr(1, $3);  }
-    | DECR AT expr { $$ = TAPE.formaters._decr(1, $3);  }
-	| INCR    expr { $$ = TAPE.formaters._incr(0, $2);  }
-	| DECR    expr { $$ = TAPE.formaters._decr(0, $2);  }
+    : number        { $$ = $1; }
+    | var           { $$ = $1; }
+    | "("  expr ")" { $$ = $2; }
+    | NAME "(" params ")"    { $$ = new TAPE.types.Call($1, $3); }
+	| NOT  expr              { $$ = new TAPE.types.Monadic(TAPE.op.NOT , $2); }
+	| BNOT expr              { $$ = new TAPE.types.Monadic(TAPE.op.BNOT, $2); }
 	| '+' expr %prec UNPLUS  { $$ = new TAPE.types.Monadic(TAPE.op.ABS, $2); }
 	| '-' expr %prec UNMINUS { $$ = new TAPE.types.Monadic(TAPE.op.NEG, $2); }
     | expr '+'    expr { $$ = new TAPE.types.Dyadic(TAPE.op.ADD   , $1, $3); }

@@ -2,26 +2,22 @@
 class Tape
 
     # create a new TAPE
-    constructor: -> console.log "TAPE CREATED!"
+    constructor: -> console.log "[TAPE!]"
 
     # initialize the tape with the define instruction
-    init: (type) ->
-        # used to store the data
-        @array = switch type
-            when   8 then new Uint8Array  0x100
-            when  -8 then new Int8Array   0x100
-            when  16 then new Uint16Array 0x10000
-            when -16 then new Int16Array  0x10000
-        # used for keeping numbers in the expected range
-        @byte = switch type
-            when   8 then new Uint8Array  1
-            when  -8 then new Int8Array   1
-            when  16 then new Uint16Array 1
-            when -16 then new Int16Array  1
-        # used to correctly index the array
-        @index = switch Math.abs type
-            when  8 then new Uint8Array  1
-            when 16 then new Uint16Array 1
+    init: (@type) ->
+        # array : store the data
+        # byte  : keep number in the expected range
+        # index : index the array
+        if @type == 16
+            @array = new Int16Array 0x10000
+            @byte  = new Int16Array       1
+            @index = new Uint16Array      1
+        else
+            @array = new Int8Array 0x100
+            @byte  = new Int8Array     1
+            @index = new Uint8Array    1
+        return @type
     
     # convert to the numerical type chosen
     convert: (x) ->
@@ -50,9 +46,15 @@ class Tape
 # we need an instance of tape
 tape = new Tape()
 
+# generate a string of tabs
+strTabs = (tabs) ->
+    str = ""
+    str += '\t' for [0 ... tabs]
+    return str
 
 ### OPERATORS ###
-op = {}
+op =
+    getName: (fun) -> name if fun2 == fun for name, fun2 of @
 
 # unary
 op.AT    = (i) -> tape.get i
@@ -94,97 +96,137 @@ op.LST = (a, b) -> if a <  b then 1 else 0
 op.GTE = (a, b) -> if a >= b then 1 else 0
 op.LSE = (a, b) -> if a <= b then 1 else 0
 
-
 ### ACTION ###
 actions = {}
 
 # wait the given number of milliseconds before continuing
-actions.WAIT = (v, f) -> 
-    setTimeout(f, v)
+actions.WAIT = (v) -> 
+    setTimeout(v)
     return null
 
 # play a bell sound of given note
-actions.BELL = (v, s) -> 
-    s.Play()
-    return null
-
-# display the value in the console
-actions.DISPLAY = (v) -> 
+actions.BELL = (v) -> 
     console.log(v)
+    return null
 
 # print the character in the console
 actions.PRINT = (v) -> 
     console.log(v)
-
 
 ### NODES TYPES ###
 types = {}
 
 # classes that define the nodes of our AST
 class Node 
-    print: -> "Node undefined"
+    string: (tabs) -> strTabs(tabs) + "[UNDEFINED!]\n"
+
+class types.Program extends Node
+    constructor: (@def, @funcs) -> super()
+    string: (tabs) ->
+        str  = "PROGRAM #{@def}:\n"
+        str += func.string(0) for func in @funcs
+        return str
+
+class types.Function extends Node
+    constructor: (@name, @instrs) -> super()
+    string: (tabs) ->
+        str = if @name != null
+        then "FUNCTION #{@name}:\n"
+        else "MAIN FUNCTION:\n"
+        str += instr.string(1) for instr in @instrs
+        return str
 
 # change the value of a cell
 class types.Assign extends Node
-    constructor: (@cell, @value) -> super()
-    print: -> "at #{@cell} assign #{@value.print()}"
-class types.Increment extends Node
-    constructor: (@cell) -> super()
-    print: -> "increment value at #{@cell}"
-class types.Decrement extends Node
-    constructor: (@cell) -> super()
-    print: -> "decrement value at #{@cell}"
+    constructor: (@var, @val) -> super()
+    string: (tabs) -> 
+        strTabs(tabs) + "IN:\n"  + @var.string(tabs+1) + 
+        strTabs(tabs) + "PUT:\n" + @val.string(tabs+1)
 
-# navigate through the program
-class types.Flag extends Node
-    constructor: (@id) -> super()
-    print: -> "flag #{@id.print()}"
-class types.Goto extends Node
-    constructor: (@id) -> super()
-    print: -> "go to flag #{@id.print()}"
+class types.Increment extends Node
+    constructor: (@var) -> super()
+    string: (tabs) -> strTabs(tabs) + "INCREMENT:\n" + @var.string(tabs+1)
+
+class types.Decrement extends Node
+    constructor: (@var) -> super()
+    string: (tabs) -> strTabs(tabs) + "DECREMENT:\n" + @var.string(tabs+1)
 
 # do an action
 class types.Action extends Node
-    constructor: (@action, @value) -> super()
-    print: -> "do action {@action} with value {@value}"
-
-# apply operations to values
-class types.Monadic extends Node
-    constructor: (@op, @expr) -> super()
-    print: -> "operate #{@op} on #{@expr}"
-class types.Dyadic extends Node
-    constructor: (@op, @left, @right) -> super()
-    print: -> "operate #{@op} on #{@left.print()} and #{@right.print()}"
+    constructor: (@act, @val) ->
+        super()
+        @name = switch @act
+            when actions.WAIT  then "WAIT"
+            when actions.BELL  then "BELL"
+            when actions.PRINT then "PRINT"
+    string: (tabs) -> strTabs(tabs) + "ACTION {@act}:\n" + @var.string(tabs+1)
 
 # conditional
 class types.If extends Node
     constructor: (@conds, @blocks) -> super()
-    print: ->
-        strings = []
+    string: (tabs) ->
+        str = strTabs(tabs) + "IF:\n"
         for [cond, block] in zip(@conds, @blocks)
-            strings.push("if #{cond.print()} then do #{block.print()} \n")
-        return strings.join()
+            str += if cond != null
+                strTabs(tabs+1) + "ON CONDITION:\n" + cond .string(tabs+2) +
+                strTabs(tabs+1) + "DO:\n"           + block.string(tabs+2)
+            else 
+                strTabs(tabs+1) "NO CONDITION DO:\n" + block.string(tabs+2)
+        return str
 
 # loop
 class types.Loop extends Node
-    constructor: (@cond, @block, @breaks) -> super()
-    print: -> "loop while #{@cond.print()} and do #{block.print()}"
+    constructor: (@cond, @block) -> super()
+    string: (tabs) ->
+        return if cond != null
+            strTabs(tabs) + "LOOP WHILE:\n" + @cond .string(tabs+1) +
+            strTabs(tabs) + "DO:\n"         + @block.string(tabs+1)
+        else
+            strTabs(tabs) + "LOOP:\n" + @block.string(tabs+1)
+
 class types.Break extends Node
-    constructor: (@isStop) -> super()
-    print: -> "stop the loop #{@loop}"
+    constructor: (@isStop, @loop) -> super()
+    string: (tabs) -> strTabs(tabs) + "BREAK " + if @isStop then "▼" else "▲"
+
+class types.Call extends Node
+    constructor: (@name, @params) -> super()
+    string: (tabs) -> 
+        str = strTabs(tabs) + "CALL #{@name} WITH PARAMS:\n"
+        str += param.string(tabs+1) for param in @params
+
+# apply operations to values
+class types.Monadic extends Node
+    constructor: (@op, @expr) -> super()
+    string: (tabs) -> strTabs(tabs) + "MONADIC #{op.getName(@op)}:\n" + @expr.string(tabs+1)
+
+class types.Dyadic extends Node
+    constructor: (@op, @left, @right) -> super()
+    string: (tabs) -> 
+        strTabs(tabs  ) + "DYADIC #{op.getName(@op)}:\n" + 
+        strTabs(tabs+1) + "LEFT:\n"  + @left .string(tabs+2) +
+        strTabs(tabs+1) + "RIGHT:\n" + @right.string(tabs+2)
 
 
 ### FORMATERS ###
-formaters = {}
-instructions = []
+formaters    = {}
+functions    = []
+program      = null
+
 
 # program structure
-formaters._program = (def, instrs) -> 
-    instructions.push(...instrs)
-    return instrs
-formaters._define = (value) -> 
-    tape.init value
-    return null
+formaters._program = (def, funcs) -> 
+    program = new types.Program(def, funcs)
+    functions.push(...funcs)
+    return funcs
+
+# define the tape structure
+formaters._define = (type) -> tape.init type
+
+formaters._functions = (funcs, func) ->
+    funcs = funcs or {}
+    funcs[func.name] = func
+    return funcs
+
 formaters._instructions = (instrs, instr) ->
     instrs = instrs or []
     instrs.push instr
@@ -221,11 +263,14 @@ formaters._else = (block) ->
         blocks: [block]
 
 # loops
-formaters._loop = (cond, block) ->
+formaters._loop = (type, cond, block) ->
     # TODO: look for stops and retries in the inner block
     breaks = []
-    return new types.Loop(cond, block, breaks)
+    return new types.Loop(cond, block)
 
+formaters._break = (type, isStop) ->
+    # TODO: find the corresponding loop
+    return new types.Break(isStop, null)
 
 # parse the numbers
 parseBinary = (string) -> parseInt(string)

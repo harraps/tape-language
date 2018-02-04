@@ -1,43 +1,122 @@
-# comment
+#!/bin/tape
 
-DEFINE UNSIGNED BYTE.
+#################################
 
-FLAG 0.
+[8]
 
-AT 1 ASSIGN 0.
-AT 2 ASSIGN 1.
-AT 3 ASSIGN 3.
+(
+	@0 = $0 + $1.
 
-IF     AT 1 DO # do stuff
-ELSEIF AT 2 DO # do stuff
-ELSE           # do stuff
-END
+	@1 = $2 name $3 name $4.
+	@2 = name($2, $3, $4).
 
-LOOP AT 3 DO
-	DECRE AT 3.
-	BREAK
-END
+	? expr {	
+	} expr {
+	}      {
+	}
 
-GOTO 0.
+	expr []
 
-# comment again
+	[
+		<|
+		|>
+	]
 
-[#]	+8.
+	(%) 10. # wait for milliseconds
+	(*) 10. # play sound with pitch 10
+	(&) 30. # print char
+)
 
-:: 0.
+name (
+	*> $0.
+)
 
-@1 = 0.
-@2 = 1.
-@3 = 3.
+#################################
 
-  ?> @1 [ # do stuff
-]?   @2 [ # do stuff
-]?      [ # do stuff
-]
+use 8 bits
 
-@> @3 [
-	--@3.
-	|>
-]
+main
+	at 0 put reg 0 + reg 1.
 
-:> 0.
+	if expr do
+	else if expr do
+	else
+	end
+
+	while expr do end
+
+	loop
+		retry
+		stop
+	end
+
+	wait   10.
+	bell   10.
+	print  10.
+end
+
+name do
+	return reg 0.
+end
+
+#################################
+
+❦ single line
+☙ multi line ❧
+
+
+☙
+    + - × ÷ mod
+    ¬ ∧ ∨ ⊕ ⊼ ⊽ ≡
+
+	# not necessary...
+    ⭜ incr    ⭝ decr
+❧
+❝❞ ❦ string
+
+# keep those
+	⧗  10.  ❦ wait milliseconds
+	♫  10.  ❦ ring bell
+	❡  30.    ❦ print char
+
+#################################
+
+# comm
+#(
+	comm
+)#
+
+10
+0xff
+0777
+0b0101
+'c'
+"string"
+
++		ADD
+-		SUB
+*		MUL
+/		DIV
+%		MOD
+++		INCR
+--		DECR
+!		NOT
+&&		AND
+||		OR
+^^		XOR
+!&&		NAND
+!||		NOR
+!^^		XNOR
+==		EQUALS
+!=		DIFF
+>		GREATER
+<		LESSER
+>=		EQUGREAT
+<=		EQULESS
+~		BNOT
+&		BAND
+|		BOR
+^		BXOR
+~&		BNAND
+~|		BNOR
+~^		BXNOR
