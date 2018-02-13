@@ -34,6 +34,9 @@
 ")" return ')';
 "," return ',';
 
+"main"        return 'MAIN';
+"return"|"*>" return 'RETURN';
+
 "do"  return 'DO';
 "end" return 'END';
 
@@ -94,8 +97,8 @@
 "~&" return 'BNAND';
 "~|" return 'BNOR';
 "~^" return 'BXNOR';
-"<<" return 'LSHIFT';
-">>" return 'RSHIFT';
+"<<" return '<<';
+">>" return '>>';
 
 <<EOF>> return 'EOF';
 .       return 'INVALID';
@@ -107,7 +110,7 @@
 %nonassoc '==' '!='
 %nonassoc '>' '<' '>=' '<='
 %left   AND  OR  XOR  NAND  NOR  XNOR
-%left  BAND BOR BXOR BNAND BNOR BXNOR
+%left  BAND BOR BXOR BNAND BNOR BXNOR '<<' '>>'
 %left  '+' '-'
 %left  '*' '/' '%'
 %right AT NOT BNOT INCR DECR UNPLUS UNMINUS
@@ -121,8 +124,8 @@ program
     ;
 
 def
-    : DEFINE_8  { $$ = TAPE.formaters._define( 8); }
-    | DEFINE_16 { $$ = TAPE.formaters._define(16); }
+    : DEFINE_8  { $$ =  8; }
+    | DEFINE_16 { $$ = 16; }
     ;
 
 funcs
@@ -131,7 +134,9 @@ funcs
     ;
 func
     : NAME "(" instrs ")" { $$ = new TAPE.types.Function($1  , $3); }
-    |      "(" instrs ")" { $$ = new TAPE.types.Function(null, $3); }
+    |      "(" instrs ")" { $$ = new TAPE.types.Function(null, $2); }
+    | NAME DO  instrs END { $$ = new TAPE.types.Function($1  , $3); }
+    | MAIN     instrs END { $$ = new TAPE.types.Function(null, $2); }      
     ;
 
 instrs
@@ -139,7 +144,9 @@ instrs
     | instrs instr { $$ = TAPE.formaters._instructions($1, $2); }
     ;
 instr 
-    : var ASSIGN expr '.' { $$ = new TAPE.types.Assign(false, $2, $4); }
+    : expr '.' { $$ = $1; }
+    | var ASSIGN expr '.' { $$ = new TAPE.types.Assign(false, $1, $3); }
+    | RETURN     expr '.' { $$ = new TAPE.types.Return($2); }
     | INCR  var  '.' { $$ = new TAPE.types.Increment($2); }
     | DECR  var  '.' { $$ = new TAPE.types.Decrement($2); }
     | WAIT  expr '.' { $$ = new TAPE.types.Action(TAPE.actions.WAIT , $2); }
@@ -151,10 +158,10 @@ instr
     |       expr "[" instrs "]"      { $$ = TAPE.formaters._loop(false, $2  , $4); }
     | LOOP instrs END                { $$ = TAPE.formaters._loop(true , null, $2); }
     | "["  instrs "]"                { $$ = TAPE.formaters._loop(false, null, $2); }
-    | RETRY { $$ = TAPE.formaters._break(true , false); }
-    | STOP  { $$ = TAPE.formaters._break(true , true ); }
-    | "<|"  { $$ = TAPE.formaters._break(false, false); }
-    | "|>"  { $$ = TAPE.formaters._break(false, true ); }
+    | RETRY { $$ = new TAPE.types.Break(false, true ); }
+    | STOP  { $$ = new TAPE.types.Break(true , true ); }
+    | "<|"  { $$ = new TAPE.types.Break(false, false); }
+    | "|>"  { $$ = new TAPE.types.Break(true , false); }
     ;
 elses1 
     : END
@@ -172,39 +179,39 @@ var
     ;
 
 expr 
-    : number        { $$ = $1; }
-    | var           { $$ = $1; }
-    | "("  expr ")" { $$ = $2; }
+    : number       { $$ = $1; }
+    | var          { $$ = $1; }
+    | "(" expr ")" { $$ = $2; }
     | NAME "(" params ")"    { $$ = new TAPE.types.Call($1, $3); }
 	| NOT  expr              { $$ = new TAPE.types.Monadic(TAPE.op.NOT , $2); }
 	| BNOT expr              { $$ = new TAPE.types.Monadic(TAPE.op.BNOT, $2); }
 	| '+' expr %prec UNPLUS  { $$ = new TAPE.types.Monadic(TAPE.op.ABS, $2); }
 	| '-' expr %prec UNMINUS { $$ = new TAPE.types.Monadic(TAPE.op.NEG, $2); }
-    | expr '+'    expr { $$ = new TAPE.types.Dyadic(TAPE.op.ADD   , $1, $3); }
-    | expr '-'    expr { $$ = new TAPE.types.Dyadic(TAPE.op.SUB   , $1, $3); }
-    | expr '*'    expr { $$ = new TAPE.types.Dyadic(TAPE.op.MUL   , $1, $3); }
-    | expr '/'    expr { $$ = new TAPE.types.Dyadic(TAPE.op.DIV   , $1, $3); }
-    | expr '%'    expr { $$ = new TAPE.types.Dyadic(TAPE.op.MOD   , $1, $3); }
-    | expr AND    expr { $$ = new TAPE.types.Dyadic(TAPE.op.AND   , $1, $3); }
-    | expr OR     expr { $$ = new TAPE.types.Dyadic(TAPE.op.OR    , $1, $3); }
-    | expr XOR    expr { $$ = new TAPE.types.Dyadic(TAPE.op.XOR   , $1, $3); }
-    | expr NAND   expr { $$ = new TAPE.types.Dyadic(TAPE.op.NAND  , $1, $3); }
-    | expr NOR    expr { $$ = new TAPE.types.Dyadic(TAPE.op.NOR   , $1, $3); }
-    | expr XNOR   expr { $$ = new TAPE.types.Dyadic(TAPE.op.XNOR  , $1, $3); }
-    | expr BAND   expr { $$ = new TAPE.types.Dyadic(TAPE.op.BAND  , $1, $3); }
-    | expr BOR    expr { $$ = new TAPE.types.Dyadic(TAPE.op.BOR   , $1, $3); }
-    | expr BXOR   expr { $$ = new TAPE.types.Dyadic(TAPE.op.BXOR  , $1, $3); }
-    | expr BNAND  expr { $$ = new TAPE.types.Dyadic(TAPE.op.BNAND , $1, $3); }
-    | expr BNOR   expr { $$ = new TAPE.types.Dyadic(TAPE.op.BNOR  , $1, $3); }
-    | expr BXNOR  expr { $$ = new TAPE.types.Dyadic(TAPE.op.BXNOR , $1, $3); }
-    | expr LSHIFT expr { $$ = new TAPE.types.Dyadic(TAPE.op.LSHIFT, $1, $3); }
-    | expr RSHIFT expr { $$ = new TAPE.types.Dyadic(TAPE.op.RSHIFT, $1, $3); }
-    | expr '=='   expr { $$ = new TAPE.types.Dyadic(TAPE.op.EQU   , $1, $3); }
-    | expr '!='   expr { $$ = new TAPE.types.Dyadic(TAPE.op.DIF   , $1, $3); }
-    | expr '>'    expr { $$ = new TAPE.types.Dyadic(TAPE.op.GRT   , $1, $3); }
-    | expr '<'    expr { $$ = new TAPE.types.Dyadic(TAPE.op.LST   , $1, $3); }
-    | expr '>='   expr { $$ = new TAPE.types.Dyadic(TAPE.op.GTE   , $1, $3); }
-    | expr '<='   expr { $$ = new TAPE.types.Dyadic(TAPE.op.LTE   , $1, $3); }
+    | expr '+'   expr { $$ = new TAPE.types.Dyadic(TAPE.op.ADD   , $1, $3); }
+    | expr '-'   expr { $$ = new TAPE.types.Dyadic(TAPE.op.SUB   , $1, $3); }
+    | expr '*'   expr { $$ = new TAPE.types.Dyadic(TAPE.op.MUL   , $1, $3); }
+    | expr '/'   expr { $$ = new TAPE.types.Dyadic(TAPE.op.DIV   , $1, $3); }
+    | expr '%'   expr { $$ = new TAPE.types.Dyadic(TAPE.op.MOD   , $1, $3); }
+    | expr AND   expr { $$ = new TAPE.types.Dyadic(TAPE.op.AND   , $1, $3); }
+    | expr OR    expr { $$ = new TAPE.types.Dyadic(TAPE.op.OR    , $1, $3); }
+    | expr XOR   expr { $$ = new TAPE.types.Dyadic(TAPE.op.XOR   , $1, $3); }
+    | expr NAND  expr { $$ = new TAPE.types.Dyadic(TAPE.op.NAND  , $1, $3); }
+    | expr NOR   expr { $$ = new TAPE.types.Dyadic(TAPE.op.NOR   , $1, $3); }
+    | expr XNOR  expr { $$ = new TAPE.types.Dyadic(TAPE.op.XNOR  , $1, $3); }
+    | expr BAND  expr { $$ = new TAPE.types.Dyadic(TAPE.op.BAND  , $1, $3); }
+    | expr BOR   expr { $$ = new TAPE.types.Dyadic(TAPE.op.BOR   , $1, $3); }
+    | expr BXOR  expr { $$ = new TAPE.types.Dyadic(TAPE.op.BXOR  , $1, $3); }
+    | expr BNAND expr { $$ = new TAPE.types.Dyadic(TAPE.op.BNAND , $1, $3); }
+    | expr BNOR  expr { $$ = new TAPE.types.Dyadic(TAPE.op.BNOR  , $1, $3); }
+    | expr BXNOR expr { $$ = new TAPE.types.Dyadic(TAPE.op.BXNOR , $1, $3); }
+    | expr '<<'  expr { $$ = new TAPE.types.Dyadic(TAPE.op.LSHIFT, $1, $3); }
+    | expr '>>'  expr { $$ = new TAPE.types.Dyadic(TAPE.op.RSHIFT, $1, $3); }
+    | expr '=='  expr { $$ = new TAPE.types.Dyadic(TAPE.op.EQU   , $1, $3); }
+    | expr '!='  expr { $$ = new TAPE.types.Dyadic(TAPE.op.DIF   , $1, $3); }
+    | expr '>'   expr { $$ = new TAPE.types.Dyadic(TAPE.op.GRT   , $1, $3); }
+    | expr '<'   expr { $$ = new TAPE.types.Dyadic(TAPE.op.LST   , $1, $3); }
+    | expr '>='  expr { $$ = new TAPE.types.Dyadic(TAPE.op.GTE   , $1, $3); }
+    | expr '<='  expr { $$ = new TAPE.types.Dyadic(TAPE.op.LTE   , $1, $3); }
     ;
 
 number
