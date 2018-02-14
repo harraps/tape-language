@@ -1,34 +1,31 @@
 <!DOCTYPE html>
 <head>
-    <!-- order matters ! -->
-    <script src="definition.js"></script>
-    <script src="tape.js"></script>
+    
 </head>
 <body>
+    <div id="program"></div>
+    <div id="output" ></div>
+
+    <!-- order matters ! -->
+    <script src="display.js"   ></script>
+    <script src="definition.js"></script>
+    <script src="tape.js"      ></script>
     <script>
-        var prog = `[8]
-(
-
-	? 0 {	
-	} 1 {
-	}   {
-	}
-
-	# 0 []
-	# [ <| |> ]
-
-	(%) 10. # wait for milliseconds
-	(*) 20. # play sound with pitch 10
-	(&) 30. # print char
-)
-
-name (
-	*> $0.
-)`;
-        console.log(tape.parse(
-            prog
-        ));
-
+        var program_src = `
+[16] (
+? 0 {} 1 {}{}
+# 0 []
+# [ <| |> ]
+(%) 500.
+(&) 97.
+(%) 500.
+(*) 400.
+(%) 1000.
+(*) 500.
+(&) 5200. )            
+name ( *> $0. )
+        `;
+        tape.parse(program_src);
         TAPE.program.run();
     </script>
 </body>

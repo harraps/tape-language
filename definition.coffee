@@ -17,6 +17,11 @@ CONVERTER =
         @unsignedCell[0] = v
         return @unsignedCell[0]
 
+# sleep function called with 'await sleep(ms)'
+sleep = (ms) ->
+  new Promise (resolve) ->
+    window.setTimeout resolve, ms
+
 # implementation of Python zip function
 zip = () ->
   lengthArray = (arr.length for arr in arguments)
@@ -113,22 +118,17 @@ op.LSE = (a, b) -> if a <= b then 1 else 0
 actions = {}
 
 # wait the given number of milliseconds before continuing
-actions.WAIT = (v) -> 
-    v = CONVERTER.uint v
-    setTimeout(v)
-    return null
+actions.WAIT = (v) ->
+    new Promise (resolve) ->
+        window.setTimeout resolve, CONVERTER.uint(v)
 
 # play a bell sound of given note
 actions.BELL = (v) -> 
-    v = CONVERTER.uint v
-    console.log(v)
-    return null
+    PLAY_SOUND CONVERTER.uint v
 
 # print the character in the console
-actions.PRINT = (v) -> 
-    v = CONVERTER.uint v
-    console.log(v)
-    return null
+actions.PRINT = (v) ->
+    ADD_CHAR String.fromCharCode(CONVERTER.uint v)
 
 ### NODES TYPES ###
 types = {}
@@ -186,7 +186,7 @@ class types.Function extends Node
         # generate a register for the function
         reg = @program.tape.makeReg params
         # execute instructions
-        instr.run reg for instr in @block
+        await instr.run reg for instr in @block
         return @returnValue
 
 class types.Return extends Node
@@ -257,7 +257,7 @@ class types.Action extends Node
     string: (tabs) -> strTabs(tabs) + "ACTION {@act}:\n" + @var.string(tabs+1)
     run: (reg) ->
         val = if @val is Node then @val.run reg else @val
-        @act val
+        return await @act val
 
 # conditional
 class types.If extends Node
@@ -287,7 +287,7 @@ class types.If extends Node
             val = if cond is Node then cond.run reg else cond
             unless val == 0
                 if block?
-                    instr.run reg for instr in block
+                    await instr.run reg for instr in block
                     break
 
 # loop
@@ -311,7 +311,7 @@ class types.Loop extends Node
         val = if @cond? and @cond.run?() then @cond.run reg else @cond
         until val == 0
             for instr in @block
-                instr.run reg if instr? and instr.run?()
+                await instr.run reg if instr? and instr.run?()
                 if  @stopLoop !=  0 then break
             if      @stopLoop ==  1 then continue
             else if @stopLoop == -1 then break
@@ -342,7 +342,7 @@ class types.Call extends Node
 
     string: (tabs) -> strTabs(tabs) + "CALL #{@name} WITH PARAMS:\n" + stringBlock(tabs+1, @params)
 
-    run: (reg) -> @func.run @params
+    run: (reg) -> await @func.run @params
 
 # apply operations to values
 class types.Monadic extends Node
