@@ -11,6 +11,9 @@ GLOBAL.program_src = div_program.innerHTML
 # http://marcgg.com/blog/2016/11/01/javascript-audio/
 context = new AudioContext()
 GLOBAL.PLAY_SOUND = (pitch) ->
+    # if the pitch is too low or too high,
+    # it won't be audible anyway
+    if pitch < 20 or pitch > 20000 then return
     # oscillation and gain
     osc  = context.createOscillator()
     gain = context.createGain()

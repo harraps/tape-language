@@ -3,19 +3,25 @@
 CONVERTER =
     signedCell: null
     unsignedCell: null
+    audioFactor: 1
     init: (type) ->
         if type == 16
             @signedCell   = new Int16Array  1
             @unsignedCell = new Uint16Array 1
+            @audioFactor  = 1
         else
             @signedCell   = new Int8Array   1
             @unsignedCell = new Uint8Array  1
+            @audioFactor  = 10
     int: (v) ->
         @signedCell[0] = v
         return @signedCell[0]
     uint: (v) ->
         @unsignedCell[0] = v
         return @unsignedCell[0]
+    audio: (n) ->
+        @unsignedCell[0] = n
+        return @unsignedCell[0] * @audioFactor
 
 # sleep function called with 'await sleep(ms)'
 sleep = (ms) ->
@@ -124,7 +130,7 @@ actions.WAIT = (v) ->
 
 # play a bell sound of given note
 actions.BELL = (v) -> 
-    PLAY_SOUND CONVERTER.uint v
+    PLAY_SOUND CONVERTER.audio v
 
 # print the character in the console
 actions.PRINT = (v) ->
@@ -149,7 +155,7 @@ stringBlock = (tabs, block) ->
     str += e.string(tabs) for e in block
     return str
 strNode = (tabs, n) ->
-    return if n is Node then n.string(tabs) else strTabs(tabs) + n + "\n"
+    return if n? and n.string?() then n.string(tabs) else strTabs(tabs) + n + "\n"
 
 # program
 class types.Program extends Node
@@ -199,18 +205,18 @@ class types.Return extends Node
     string: (tabs) ->
 
     run: (reg) ->
-        @func.returnValue = if @val is Node then @val.run reg else @val
+        @func.returnValue = if @val? and @val.run?() then @val.run reg else @val
 
 # access a variable
 class types.Variable extends Node
     constructor: (@useReg, @ind) -> super()
-    link: (@program) -> @ind.link @program if @ind is Node
+    link: (@program) -> @ind.link @program if @ind? and @ind.link?()
 
     string: (tabs) ->
         str = stringTabs(tabs) + if @useReg then "REGISTER:\n" else "TAPE:\n"
         return str + strNode tabs+1, @ind
 
-    index: (reg) -> if @ind is Node then @ind.run reg else @ind
+    index: (reg) -> if @ind? @ind.run?() then @ind.run reg else @ind
     run:   (reg) ->
         index = @index reg
         return if @useReg then reg.get index else @program.tape.get index
@@ -221,8 +227,8 @@ class types.Variable extends Node
 class types.Assign extends Node
     constructor: (@var, @val) -> super()
     link: (@program) ->
-        @var.link @program if @var is Node
-        @val.link @program if @val is Node
+        @var.link @program if @var? and @var.link?()
+        @val.link @program if @val? and @val.link?()
 
     string: (tabs) -> 
         strTabs(tabs) + "IN:\n"  + strNode(tabs+1, @var) + 
@@ -230,7 +236,7 @@ class types.Assign extends Node
     
     run: (reg) ->
         ind = @var.index reg
-        val = if @val is Node then @val.run reg else @val
+        val = if @val? and @val.run?() then @val.run reg else @val
         if @var.useReg then reg.set ind, val else @program.tape.set ind, val
 
 class types.SelfAssign extends Node
@@ -256,7 +262,7 @@ class types.Action extends Node
     link: (@program) ->
     string: (tabs) -> strTabs(tabs) + "ACTION {@act}:\n" + @var.string(tabs+1)
     run: (reg) ->
-        val = if @val is Node then @val.run reg else @val
+        val = if @val? and @val.run?() then @val.run reg else @val
         return await @act val
 
 # conditional
@@ -284,7 +290,7 @@ class types.If extends Node
     
     run: (reg) ->
         for [cond, block] in zip(@conds, @blocks)
-            val = if cond is Node then cond.run reg else cond
+            val = if cond? and cond.run?() then cond.run reg else cond
             unless val == 0
                 if block?
                     await instr.run reg for instr in block
@@ -297,7 +303,7 @@ class types.Loop extends Node
         @stopLoop = 0
 
     link: (@program) ->
-        @cond.link @program if  @cond is Node
+        @cond.link @program if  @cond? and @cond.link?()
         instr.link @program for instr in @block
 
     string: (tabs) ->
@@ -350,13 +356,22 @@ class types.Monadic extends Node
 
     string: (tabs) -> strTabs(tabs) + "MONADIC #{op.getName(@op)}:\n" + @expr.string(tabs+1)
 
+    run: (reg) ->
+        val = if @expr? and @expr.run?() then @expr.run reg else @expr 
+        @op val
+
 class types.Dyadic extends Node
     constructor: (@op, @left, @right) -> super()
+
     string: (tabs) ->
         strTabs(tabs  ) + "DYADIC #{op.getName(@op)}:\n" + 
         strTabs(tabs+1) + "LEFT:\n"  + strExpr(tabs+2, @left ) +
         strTabs(tabs+1) + "RIGHT:\n" + strExpr(tabs+2, @right)
-
+    
+    run: (reg) ->
+        left  = if @left?  and @left.run?()  then @left .run reg else @left
+        right = if @right? and @right.run?() then @right.run reg else @right 
+        @op left, right
 
 ### FORMATERS ###
 formaters = {}

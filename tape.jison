@@ -213,6 +213,10 @@ expr
     | expr '>='  expr { $$ = new TAPE.types.Dyadic(TAPE.op.GTE   , $1, $3); }
     | expr '<='  expr { $$ = new TAPE.types.Dyadic(TAPE.op.LTE   , $1, $3); }
     ;
+params
+    :            expr { $$ = TAPE.formaters._parameters(null, $1); }
+    | params ',' expr { $$ = TAPE.formaters._parameters($1  , $3); }
+    ;
 
 number
     : DECIMAL     { $$ = TAPE.formaters._number('decimal'    , yytext); }
