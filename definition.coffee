@@ -38,12 +38,22 @@ class structs.Register
         else
             @array = new Int8Array  8
             @type  = 8
+        # index of the cell that have been modified
+        @modifed = null
     
+    _modif: (i) -> @modified = CONVERTER.uint(i) % @type
+
     # access the array
-    set: (i, x) -> @array[CONVERTER.uint(i) % @type] = x
-    get:  (i) ->   @array[CONVERTER.uint(i) % @type]
-    incr: (i) -> ++@array[CONVERTER.uint(i) % @type]
-    decr: (i) -> --@array[CONVERTER.uint(i) % @type]
+    get: (i) -> @array[CONVERTER.uint(i) % @type]
+    set: (i, x) -> 
+        @_modif i
+        @array[@edited] = x
+    incr: (i) -> 
+        @_modif i
+        ++@array[@edited]
+    decr: (i) ->
+        @_modif i
+        --@array[@edited]
 
 class structs.Tape
     constructor: (type) ->
@@ -56,6 +66,10 @@ class structs.Tape
         else
             @array = new Int8Array 0x100
             @type  = 8
+        # index of the cell that have been modified
+        @modifed = null
+    
+    _modif: (i) -> @modified = CONVERTER.uint i
     
     # make a register for a function
     makeReg: (params) -> 
@@ -65,10 +79,16 @@ class structs.Tape
         return reg
     
     # access the array
-    set: (i, x) -> @array[CONVERTER.uint i] = x
-    get:  (i) ->   @array[CONVERTER.uint i]
-    incr: (i) -> ++@array[CONVERTER.uint i]
-    decr: (i) -> --@array[CONVERTER.uint i]
+    get: (i) -> @array[CONVERTER.uint i]
+    set: (i, x) -> 
+        @_modif i
+        @array[@edited] = x
+    incr: (i) -> 
+        @_modif i
+        ++@array[@edited]
+    decr: (i) ->
+        @_modif i
+        --@array[@edited]
 
 ### OPERATORS ###
 op =
