@@ -107,13 +107,13 @@
 
 /* operator associations and precedence */
 %nonassoc '='
-%nonassoc '==' '!='
-%nonassoc '>' '<' '>=' '<='
-%left   AND  OR  XOR  NAND  NOR  XNOR
-%left  BAND BOR BXOR BNAND BNOR BXNOR '<<' '>>'
-%left  '+' '-'
-%left  '*' '/' '%'
-%right AT NOT BNOT INCR DECR UNPLUS UNMINUS
+%left  AND  OR  XOR  NAND  NOR  XNOR
+%left BAND BOR BXOR BNAND BNOR BXNOR '<<' '>>'
+%nonassoc '==' '!=' '>' '<' '>=' '<='
+%left '+' '-'
+%left '*' '/' '%'
+%left NAME
+%right AT NOT BNOT INCR DECR UNPLUS UNMINUS MONAD
 
 %start program
 
@@ -130,7 +130,7 @@ def
 
 funcs
     : 
-    | funcs func { $$ = TAPE.formaters._functions($1, $2); }
+    | funcs func { $$ = TAPE.formaters.namedGather($1, $2); }
     ;
 func
     : NAME "(" instrs ")" { $$ = new TAPE.types.Function($1  , $3); }
@@ -140,13 +140,14 @@ func
     ;
 
 instrs
-    : 
-    | instrs instr { $$ = TAPE.formaters._instructions($1, $2); }
+    :              { $$ = []; }
+    | instrs instr { $$ = TAPE.formaters.gather($1, $2); }
     ;
 instr 
-    : expr '.' { $$ = $1; }
-    | var ASSIGN expr '.' { $$ = new TAPE.types.Assign(false, $1, $3); }
+    : var ASSIGN expr '.' { $$ = new TAPE.types.Assign(false, $1, $3); }
     | RETURN     expr '.' { $$ = new TAPE.types.Return($2); }
+    | identifier '(' params ')' '.' { $$ = new TAPE.types.Call($1, $3); }
+    | identifier     params     '.' { $$ = new TAPE.types.Call($1, $2); }
     | INCR  var  '.' { $$ = new TAPE.types.Increment($2); }
     | DECR  var  '.' { $$ = new TAPE.types.Decrement($2); }
     | WAIT  expr '.' { $$ = new TAPE.types.Action(TAPE.actions.WAIT , $2); }
@@ -154,10 +155,10 @@ instr
     | PRINT expr '.' { $$ = new TAPE.types.Action(TAPE.actions.PRINT, $2); }
     | IF  expr DO  instrs     elses1 { $$ = TAPE.formaters._if($2, $4, $5); }
     | "?" expr "{" instrs "}" elses2 { $$ = TAPE.formaters._if($2, $4, $6); }
-    | WHILE expr DO  instrs END      { $$ = TAPE.formaters._loop(true , $2  , $4); }
-    |       expr "[" instrs "]"      { $$ = TAPE.formaters._loop(false, $2  , $4); }
-    | LOOP instrs END                { $$ = TAPE.formaters._loop(true , null, $2); }
-    | "["  instrs "]"                { $$ = TAPE.formaters._loop(false, null, $2); }
+    | WHILE expr DO  instrs END      { $$ = TAPE.formaters._loop(true , $2   , $4); }
+    |       expr "[" instrs "]"      { $$ = TAPE.formaters._loop(false, $2   , $4); }
+    | LOOP instrs END                { $$ = TAPE.formaters._loop(true , false, $2); }
+    | "["  instrs "]"                { $$ = TAPE.formaters._loop(false, false, $2); }
     | RETRY { $$ = new TAPE.types.Break(false, true ); }
     | STOP  { $$ = new TAPE.types.Break(true , true ); }
     | "<|"  { $$ = new TAPE.types.Break(false, false); }
@@ -181,8 +182,10 @@ var
 expr 
     : number       { $$ = $1; }
     | var          { $$ = $1; }
-    | "(" expr ")" { $$ = $2; }
-    | NAME "(" params ")"    { $$ = new TAPE.types.Call($1, $3); }
+    | '(' expr ')' { $$ = $2; }
+    | identifier '(' params ')'   { $$ = new TAPE.types.Call($1, $3);   }
+    | identifier expr %prec MONAD { $$ = new TAPE.types.Call($1, [$2]); }
+    | exprDyad identifier expr    { $$ = formaters._callDyadic($2, $1, $3); }
 	| NOT  expr              { $$ = new TAPE.types.Monadic(TAPE.op.NOT , $2); }
 	| BNOT expr              { $$ = new TAPE.types.Monadic(TAPE.op.BNOT, $2); }
 	| '+' expr %prec UNPLUS  { $$ = new TAPE.types.Monadic(TAPE.op.ABS, $2); }
@@ -213,9 +216,20 @@ expr
     | expr '>='  expr { $$ = new TAPE.types.Dyadic(TAPE.op.GTE   , $1, $3); }
     | expr '<='  expr { $$ = new TAPE.types.Dyadic(TAPE.op.LTE   , $1, $3); }
     ;
+identifier
+    : NAME { $$ = yytext; }
+    ;
 params
-    :            expr { $$ = TAPE.formaters._parameters(null, $1); }
-    | params ',' expr { $$ = TAPE.formaters._parameters($1  , $3); }
+    :         { $$ = []; }
+    | params2 { $$ = $1; }
+    ;
+params2
+    :             expr { $$ = TAPE.formaters.gather([], $1); }
+    | params2 ',' expr { $$ = TAPE.formaters.gather($1, $3); }
+    ;
+exprDyad
+    :                     expr { $$ = $1; }
+    | exprDyad identifier expr { $$ = TAPE.formaters._callDyadicList($2, $1, $3); }
     ;
 
 number

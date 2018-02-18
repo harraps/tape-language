@@ -141,8 +141,8 @@ types = {}
 
 # classes that define the nodes of our AST
 class Node 
-    link:   ()     -> console.log "not implemented"
-    run:    ()     -> console.log "not implemented"
+    link: () -> console.log "not implemented"
+    run:  () -> console.log "not implemented"
     string: (tabs) -> strTabs(tabs) + "[UNDEFINED!]\n"
 
 # helper functions to print the AST
@@ -155,7 +155,7 @@ stringBlock = (tabs, block) ->
     str += e.string(tabs) for e in block
     return str
 strNode = (tabs, n) ->
-    return if n? and n.string?() then n.string(tabs) else strTabs(tabs) + n + "\n"
+    return n.string?(tabs) ? strTabs(tabs) + n + "\n"
 
 # program
 class types.Program extends Node
@@ -178,7 +178,8 @@ class types.Function extends Node
         @returnValue = 0
 
     link: (@program) ->
-        instr.link @program for instr in @block
+        instr.link?(@program, @) for instr in @block
+        return null
 
     string: (tabs) ->
         # print function name and content
@@ -200,35 +201,53 @@ class types.Return extends Node
         super()
         @func = null
 
-    link: (@program) ->
+    link: (@program, @func) -> @val.link?(@program, @func)
 
     string: (tabs) ->
+        strTabs(tabs) + "RETURN:\n" + strNode(tabs+1, @val)
 
-    run: (reg) ->
-        @func.returnValue = if @val? and @val.run?() then @val.run reg else @val
+    run: (reg) -> @func.returnValue = await @val.run?(reg) ? @val
+        
 
 # access a variable
 class types.Variable extends Node
     constructor: (@useReg, @ind) -> super()
-    link: (@program) -> @ind.link @program if @ind? and @ind.link?()
+    link: (@program, @func) -> @ind.link?(@program, @func)
 
     string: (tabs) ->
         str = stringTabs(tabs) + if @useReg then "REGISTER:\n" else "TAPE:\n"
         return str + strNode tabs+1, @ind
 
-    index: (reg) -> if @ind? @ind.run?() then @ind.run reg else @ind
-    run:   (reg) ->
-        index = @index reg
-        return if @useReg then reg.get index else @program.tape.get index
+    index: (reg) -> await @ind.run?(reg) ? @ind
+
+    run: (reg) -> await @get reg
         
+    get: (reg) -> # get the value of the variable
+        index = await @index reg
+        return if @useReg then reg.get index else @program.tape.get index
+
+    set: (reg, val) ->
+        index = await @index reg
+        if @useReg then reg.set(index, val) else @program.tape.set(index, val)
+        return null
+
+    incr: (reg) ->
+        index = await @index reg
+        if @useReg then reg.incr index else @program.tape.incr index
+        return null
+    
+    decr: (reg) ->
+        index = await @index reg
+        if @useReg then reg.decr index else @program.tape.decr index
+        return null
 
 
 # change the value of a cell
 class types.Assign extends Node
     constructor: (@var, @val) -> super()
-    link: (@program) ->
-        @var.link @program if @var? and @var.link?()
-        @val.link @program if @val? and @val.link?()
+    link: (@program, @func) ->
+        @var.link?(@program, @func)
+        @val.link?(@program, @func)
 
     string: (tabs) -> 
         strTabs(tabs) + "IN:\n"  + strNode(tabs+1, @var) + 
@@ -236,20 +255,38 @@ class types.Assign extends Node
     
     run: (reg) ->
         ind = @var.index reg
-        val = if @val? and @val.run?() then @val.run reg else @val
-        if @var.useReg then reg.set ind, val else @program.tape.set ind, val
+        val = await @val.run?(reg) ? @val
+        @var.set ind, val
+
 
 class types.SelfAssign extends Node
     constructor: (@var, @val, @op) -> super()
+    link: (@program, @func) ->
+        @var.link?(@program, @func)
+        @val.link?(@program, @func)
+
     string: (tabs) ->
         strTabs(tabs) + "CHANGE:\n"                + @var.string(tabs+1) +
         strTabs(tabs) + "BY #{op.getName(@op)}:\n" + @val.string(tabs+1)
+
+    run: (reg) ->
+        ind  = @var.index reg
+        val1 = @var.get   reg
+        val2 = await @val.run?(reg) ? @val
+        val3 = @op val1, val2
+        @var.set ind, @op(val1, val2)
+
 class types.Increment extends Node
     constructor: (@var) -> super()
+    link: (@program, @func) -> @var.link?(@program, @func)
     string: (tabs) -> strTabs(tabs) + "INCREMENT:\n" + @var.string(tabs+1)
+    run: (reg) -> await @var.incr reg
+    
 class types.Decrement extends Node
     constructor: (@var) -> super()
+    link: (@program, @func) -> @var.link?(@program, @func)
     string: (tabs) -> strTabs(tabs) + "DECREMENT:\n" + @var.string(tabs+1)
+    run: (reg) -> await @var.decr reg
 
 # do an action
 class types.Action extends Node
@@ -259,10 +296,10 @@ class types.Action extends Node
             when actions.WAIT  then "WAIT"
             when actions.BELL  then "BELL"
             when actions.PRINT then "PRINT"
-    link: (@program) ->
+    link: (@program, @func) -> @val.link?(@program, @func)
     string: (tabs) -> strTabs(tabs) + "ACTION {@act}:\n" + @var.string(tabs+1)
     run: (reg) ->
-        val = if @val? and @val.run?() then @val.run reg else @val
+        val = await @val.run?(reg) ? @val
         return await @act val
 
 # conditional
@@ -272,12 +309,12 @@ class types.If extends Node
         if @conds.length != @blocks.length
             console.log "error in if statement"
     
-    link: (@program) ->
+    link: (@program, @func) ->
         for cond in @conds
-            cond.link @program if cond? and cond.link?()
+            cond.link?(@program, @func)
         for block in @blocks
             if block?
-                instr.link @program for instr in block
+                instr.link?(@program, @func) for instr in block
     
     string: (tabs) ->
         str = strTabs(tabs) + "IF:\n"
@@ -289,8 +326,11 @@ class types.If extends Node
         return str
     
     run: (reg) ->
-        for [cond, block] in zip(@conds, @blocks)
-            val = if cond? and cond.run?() then cond.run reg else cond
+        i = 0
+        while i < @conds.length
+            cond  = @conds[i]
+            block = @blocks[i++]
+            val = await cond.run?(reg) ? cond
             unless val == 0
                 if block?
                     await instr.run reg for instr in block
@@ -302,9 +342,9 @@ class types.Loop extends Node
         super()
         @stopLoop = 0
 
-    link: (@program) ->
-        @cond.link @program if  @cond? and @cond.link?()
-        instr.link @program for instr in @block
+    link: (@program, @func) ->
+        @cond.link?(@program, @func)
+        instr.link?(@program, @func) for instr in @block
 
     string: (tabs) ->
         return if cond != null
@@ -314,14 +354,14 @@ class types.Loop extends Node
             strTabs(tabs) + "LOOP:\n" + @block.string(tabs+1)
 
     run: (reg) ->
-        val = if @cond? and @cond.run?() then @cond.run reg else @cond
+        val = await @cond.run?(reg) ? @cond
         until val == 0
             for instr in @block
-                await instr.run reg if instr? and instr.run?()
+                await instr.run?(reg)
                 if  @stopLoop !=  0 then break
             if      @stopLoop ==  1 then continue
             else if @stopLoop == -1 then break
-            val = if @cond? and @cond.run?() then @cond.run reg else @cond
+            val = await @cond.run?(reg) ? @cond
         @stopLoop = 0 # does it work with recursive function call ?
 
 class types.Break extends Node
@@ -329,7 +369,7 @@ class types.Break extends Node
         super()
         @loop = null
 
-    link: (@program) ->
+    link: (@program, @func) ->
 
     string: (tabs) -> strTabs(tabs) + "BREAK " + if @isStop then "▼" else "▲"
 
@@ -340,28 +380,41 @@ class types.Break extends Node
 class types.Call extends Node
     constructor: (@name, @params) ->
         super()
-        @func = null
+        @params = @params or []
+        @call = null
 
-    link: (@program) ->
-        @func = func if name == @name for name, func in @program.funcs
-        if @func == null then console.log "function not found !"
+    # prepare a pointer to the function to call
+    # reduce a part of the AST if useless
+    link: (@program, @func) ->
+        for name of @program.funcs
+            @call = @program.funcs[name] if name == @name
+        if @call == null then console.log "function not found !"
+        @params.splice @program.def, @params.length
+        for param in @params
+            param.link?(@program, @func)
 
     string: (tabs) -> strTabs(tabs) + "CALL #{@name} WITH PARAMS:\n" + stringBlock(tabs+1, @params)
 
-    run: (reg) -> await @func.run @params
+    run: (reg) -> await @call.run?(@params)
 
 # apply operations to values
 class types.Monadic extends Node
     constructor: (@op, @expr) -> super()
 
+    link: (@program, @func) -> @expr.link?(@program, @func)
+
     string: (tabs) -> strTabs(tabs) + "MONADIC #{op.getName(@op)}:\n" + @expr.string(tabs+1)
 
     run: (reg) ->
-        val = if @expr? and @expr.run?() then @expr.run reg else @expr 
+        val = await @expr.run?(reg) ? @expr 
         @op val
 
 class types.Dyadic extends Node
     constructor: (@op, @left, @right) -> super()
+
+    link: (@program, @func) ->
+        @left .link?(@program, @func)
+        @right.link?(@program, @func)
 
     string: (tabs) ->
         strTabs(tabs  ) + "DYADIC #{op.getName(@op)}:\n" + 
@@ -369,8 +422,8 @@ class types.Dyadic extends Node
         strTabs(tabs+1) + "RIGHT:\n" + strExpr(tabs+2, @right)
     
     run: (reg) ->
-        left  = if @left?  and @left.run?()  then @left .run reg else @left
-        right = if @right? and @right.run?() then @right.run reg else @right 
+        left  = await @left.run?(reg)  ? @left
+        right = await @right.run?(reg) ? @right 
         @op left, right
 
 ### FORMATERS ###
@@ -387,20 +440,17 @@ formaters._program = (def, funcs) ->
     GLOBAL.TAPE.program = program
     return program
 
-# define the tape structure
-formaters._define = (type) -> tape.init type
-
 # gather functions
-formaters._functions = (funcs, func) ->
-    funcs = funcs or {}
-    funcs[func.name] = func
-    return funcs
+formaters.namedGather = (map, element) ->
+    map = map or {}
+    map[element.name] = element
+    return map
 
-# gather instructions
-formaters._instructions = (instrs, instr) ->
-    instrs = instrs or []
-    instrs.push instr
-    return instrs
+# gather a list of elements
+formaters.gather = (list, element) ->
+    list = list or []
+    list.push element
+    return list
 
 # conditionals
 formaters._if = (cond, block, elses) ->
@@ -419,8 +469,28 @@ formaters._elseif = (cond, block, elses) ->
     return elses
 formaters._else = (block) ->
     return
-        conds:  [null]
+        conds:  [true]
         blocks: [block]
+
+formaters._callDyadic = (name, params, param) ->
+    fullList = @_callDyadicList name, params, param
+    delete params.name
+    return new types.Call name, params
+
+formaters._callDyadicList = (name, params, param) ->
+    if params instanceof Array # list of params
+        if params.name == name # same operator
+            params.push param
+            return params
+        else # different operators
+            newList = [new types.Call(params.name, params), param]
+            delete params.name
+            newList.name = name
+            return newList
+    else # single param
+        newList = [params, param]
+        newList.name = name
+        return newList
 
 # loops
 findBreaks = (lp, block) ->
