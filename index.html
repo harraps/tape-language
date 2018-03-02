@@ -3,35 +3,47 @@
     
 </head>
 <body>
-    <div id="program"></div>
+    <textarea id="program" rows="20" cols="80" style="white-space: pre-line;">
+# define the type of tape: 8-bits or 16-bits
+[8]
+# main function...
+{
+    @0 = "Hello World!".
+
+    $0 < 12 [
+        (%) 5.
+        (&) @$0.
+        $0 = $0 + 1.
+    ]
+}
+    </textarea>
+    <br/>
+    <button type="button" onclick="run()"  >RUN</button>
+    <button type="button" onclick="parse()">PARSE</button>
     <div id="output" ></div>
 
     <!-- order matters ! -->
     <script src="display.js"   ></script>
     <script src="definition.js"></script>
     <script src="tape.js"      ></script>
+
     <script>
-        var program_src = `
-[8] (
-name.
-(%) 255.
-(&) 97.
-)            
-name (
-    ? 0 {} 1 {}{}
-# 0 []
-# [ <| |> ]
-(%) 255.
-(&) 97 + 1.
-(%) 255.
-(*) 40.
-(%) 255.
-(*) 50.
-(&) 100.
-    *> $0.
-)
-        `;
-        tape.parse(program_src);
-        TAPE.program.run();
+        // parse the program
+        function parse() {
+            // get program
+            program_src = div_program.value;
+            tape.parse(program_src);
+            console.log(TAPE.program);
+        }
+        // parse and run the program
+        function run() {
+            // clean console output
+            div_output.textContent = "";
+
+            // get program
+            program_src = div_program.value;
+            tape.parse(program_src);
+            TAPE.program.run();
+        }
     </script>
 </body>

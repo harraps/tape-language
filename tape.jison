@@ -17,15 +17,14 @@
 "#(".*")#"    {/* ignore comments  */}
 "☙".*"❧"    {/* ignore comments  */}
 
-"use"\s*"8"\s*"bits"|"[8]"   return 'DEFINE_8';
-"use"\s*"16"\s*"bits"|"[16]" return 'DEFINE_16';
+"USE"\s*"8"\s*"BITS"|"use"\s*"8"\s*"bits"|"[8]"   return 'DEFINE_8';
+"USE"\s*"16"\s*"BITS"|"[16]" return 'DEFINE_16';
 
-[A-Za-z_][A-Za-z0-9_]*\b return 'NAME';
-[0-9]+\b                 return 'DECIMAL';
-"0b"[0-1]+\b             return 'BINARY';
-"0o"[0-7]+\b             return 'OCTAL';
-"0x"[0-9a-fA-F]+\b       return 'HEXADECIMAL';
-"'"."'"                  return 'CHARACTER';
+[0-9]+\b           return 'DECIMAL';
+"0b"[0-1]+\b       return 'BINARY';
+"0o"[0-7]+\b       return 'OCTAL';
+"0x"[0-9a-fA-F]+\b return 'HEXADECIMAL';
+"'"."'"            return 'CHARACTER';
 
 "\"".*"\"" return 'STRING';
 "❝".*"❞"   return 'STRING';
@@ -34,54 +33,54 @@
 ")" return ')';
 "," return ',';
 
-"main"        return 'MAIN';
-"return"|"*>" return 'RETURN';
+"MAIN"|"main"          return 'MAIN';
+"RETURN"|"return"|"*>" return 'RETURN';
 
-"do"  return 'DO';
-"end" return 'END';
+"DO"|"do"   return 'DO';
+"END"|"end" return 'END';
 
-"if"          return 'IF';
-"else"\s*"if" return 'ELSEIF';
-"else"        return 'ELSE';
-"?"           return '?';
-"{"           return '{';
-"}"           return '}';
+"IF"|"if"                   return 'IF';
+"ELSE"\s*"IF"|"else"\s*"if" return 'ELSEIF';
+"ELSE"|"else"               return 'ELSE';
+"?" return '?';
+"{" return '{';
+"}" return '}';
 
-"while" return 'WHILE';
-"loop"  return 'LOOP';
-"retry" return 'RETRY';
-"stop"  return 'STOP';
-"["     return '[';
-"]"     return ']';
-"<|"    return '<|';
-"|>"    return '|>';
+"WHILE"|"while" return 'WHILE';
+"LOOP"|"loop"   return 'LOOP';
+"RETRY"|"retry" return 'RETRY';
+"STOP"|"stop"   return 'STOP';
+"["  return '[';
+"]"  return ']';
+"<|" return '<|';
+"|>" return '|>';
 
-"=" return '=';
-"." return '.';
+":="|"=" return '=';
+"."|";"  return '.';
 
-"wait"|"(%)"|"⧗"   return 'WAIT';
-"bell"|"(*)"|"♫"   return 'BELL';
-"print"|"(&)"|"❡"  return 'PRINT';
+"WAIT"|"wait"|"(%)"|"⧗"   return 'WAIT';
+"BELL"|"bell"|"(*)"|"♫"   return 'BELL';
+"PRINT"|"print"|"(&)"|"¶"  return 'PRINT';
 
-"at"|"@"  return 'AT';
-"reg"|"$" return 'REG';
+"AT"|"at"|"@"   return 'AT';
+"REG"|"reg"|"$" return 'REG';
 
-"+"       return '+';
-"-"       return '-';
-"*"|"×"   return '*';
-"/"|"÷"   return '/';
-"%"|"mod" return '%';
+"+"             return '+';
+"-"             return '-';
+"*"|"×"         return '*';
+"/"|"÷"         return '/';
+"%"|"MOD"|"mod" return '%';
 
 "++"|"⭜" return 'INCR';
 "--"|"⭝" return 'DECR';
 
-"not"|"!"|"¬"    return 'NOT';
-"and"|"&&"|"∧"   return 'AND';
-"or"|"||"|"∨"    return 'OR';
-"xor"|"^^"|"⊕"  return 'XOR';
-"nand"|"!&"|"⊼"  return 'NAND';
-"nor"|"!|"|"⊽"   return 'NOR';
-"xnor"|"!^"|"≡"  return 'XNOR';
+"NOT"|"not"|"!"|"¬"     return 'NOT';
+"AND"|"and"|"&&"|"∧"    return 'AND';
+"OR"|"or"|"||"|"∨"      return 'OR';
+"XOR"|"xor"|"^^"|"⊕"   return 'XOR';
+"NAND"|"nand"|"!&"|"⊼"  return 'NAND';
+"NOR"|"nor"|"!|"|"⊽"    return 'NOR';
+"XNOR"|"xnor"|"!^"|"≡"  return 'XNOR';
 
 "==" return '==';
 "!=" return '!=';
@@ -99,6 +98,8 @@
 "~^" return 'BXNOR';
 "<<" return '<<';
 ">>" return '>>';
+
+[A-Za-z_\u00A0-\uFFFF]+ return 'NAME';
 
 <<EOF>> return 'EOF';
 .       return 'INVALID';
@@ -133,8 +134,8 @@ funcs
     | funcs func { $$ = TAPE.formaters.namedGather($1, $2); }
     ;
 func
-    : NAME "(" instrs ")" { $$ = new TAPE.types.Function($1  , $3); }
-    |      "(" instrs ")" { $$ = new TAPE.types.Function(null, $2); }
+    : NAME '{' instrs '}' { $$ = new TAPE.types.Function($1  , $3); }
+    |      '{' instrs '}' { $$ = new TAPE.types.Function(null, $2); }
     | NAME DO  instrs END { $$ = new TAPE.types.Function($1  , $3); }
     | MAIN     instrs END { $$ = new TAPE.types.Function(null, $2); }      
     ;
@@ -144,8 +145,9 @@ instrs
     | instrs instr { $$ = TAPE.formaters.gather($1, $2); }
     ;
 instr 
-    : var ASSIGN expr '.' { $$ = new TAPE.types.Assign(false, $1, $3); }
-    | RETURN     expr '.' { $$ = new TAPE.types.Return($2); }
+    : var '=' expr '.' { $$ = new TAPE.types.Assign($1, $3); }
+    | var '=' text '.' { $$ = new TAPE.types.StringAssign($1, $3); }
+    | RETURN  expr '.' { $$ = new TAPE.types.Return($2); }
     | identifier '(' params ')' '.' { $$ = new TAPE.types.Call($1, $3); }
     | identifier     params     '.' { $$ = new TAPE.types.Call($1, $2); }
     | INCR  var  '.' { $$ = new TAPE.types.Increment($2); }
@@ -154,15 +156,15 @@ instr
     | BELL  expr '.' { $$ = new TAPE.types.Action(TAPE.actions.BELL , $2); }
     | PRINT expr '.' { $$ = new TAPE.types.Action(TAPE.actions.PRINT, $2); }
     | IF  expr DO  instrs     elses1 { $$ = TAPE.formaters._if($2, $4, $5); }
-    | "?" expr "{" instrs "}" elses2 { $$ = TAPE.formaters._if($2, $4, $6); }
+    | '?' expr '{' instrs '}' elses2 { $$ = TAPE.formaters._if($2, $4, $6); }
     | WHILE expr DO  instrs END      { $$ = TAPE.formaters._loop(true , $2   , $4); }
-    |       expr "[" instrs "]"      { $$ = TAPE.formaters._loop(false, $2   , $4); }
-    | LOOP instrs END                { $$ = TAPE.formaters._loop(true , false, $2); }
-    | "["  instrs "]"                { $$ = TAPE.formaters._loop(false, false, $2); }
+    |       expr '[' instrs ']'      { $$ = TAPE.formaters._loop(false, $1   , $3); }
+    | LOOP instrs END                { $$ = TAPE.formaters._loop(true , true, $2); }
+    | '['  instrs ']'                { $$ = TAPE.formaters._loop(false, true, $2); }
     | RETRY { $$ = new TAPE.types.Break(false, true ); }
     | STOP  { $$ = new TAPE.types.Break(true , true ); }
-    | "<|"  { $$ = new TAPE.types.Break(false, false); }
-    | "|>"  { $$ = new TAPE.types.Break(true , false); }
+    | '<|'  { $$ = new TAPE.types.Break(false, false); }
+    | '|>'  { $$ = new TAPE.types.Break(true , false); }
     ;
 elses1 
     : END
@@ -171,8 +173,8 @@ elses1
     ;
 elses2 
     :
-    |      "{" instrs "}"        { $$ = TAPE.formaters._else($2); }
-    | expr "{" instrs "}" elses2 { $$ = TAPE.formaters._elseif($1, $3, $5); }
+    |      '{' instrs '}'        { $$ = TAPE.formaters._else($2); }
+    | expr '{' instrs '}' elses2 { $$ = TAPE.formaters._elseif($1, $3, $5); }
     ;
 var
     : AT  expr   { $$ = new TAPE.types.Variable(false, $2); }
@@ -238,4 +240,7 @@ number
     | OCTAL       { $$ = TAPE.formaters._number('octal'      , yytext); }
     | HEXADECIMAL { $$ = TAPE.formaters._number('hexadecimal', yytext); }
     | CHARACTER   { $$ = TAPE.formaters._number('character'  , yytext); }
+    ;
+text
+    : STRING { $$ = yytext.slice(1, -1); }
     ;

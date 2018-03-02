@@ -1,39 +1,57 @@
+###
+    Definition of the nodes of the AST
+    for the TAPE programming language
+###
+
+frequencies = [
+    440.00, # A
+    466.16, # A#
+    493.88, # B
+    523.25, # C
+    554.37, # C#
+    587.37, # D
+    622.25, # D#
+    659.25, # E
+    698.46, # F
+    739.99, # F#
+    783.99, # G
+    830.61, # G#
+]
 
 # conver javascript numbers into expected format
 CONVERTER =
-    signedCell: null
+    signedCell:   null
     unsignedCell: null
-    audioFactor: 1
+    waitUnit:     10   # centiseconds
+    indexFrequ:   true # indexed frequencies
+
     init: (type) ->
         if type == 16
+            @waitUnit     = 1     # milliseconds
+            @indexFrequ   = false # full range of frequencies
             @signedCell   = new Int16Array  1
             @unsignedCell = new Uint16Array 1
-            @audioFactor  = 1
         else
             @signedCell   = new Int8Array   1
             @unsignedCell = new Uint8Array  1
-            @audioFactor  = 10
     int: (v) ->
         @signedCell[0] = v
         return @signedCell[0]
     uint: (v) ->
         @unsignedCell[0] = v
         return @unsignedCell[0]
-    audio: (n) ->
+    wait: (n) ->
         @unsignedCell[0] = n
-        return @unsignedCell[0] * @audioFactor
-
-# sleep function called with 'await sleep(ms)'
-sleep = (ms) ->
-  new Promise (resolve) ->
-    window.setTimeout resolve, ms
-
-# implementation of Python zip function
-zip = () ->
-  lengthArray = (arr.length for arr in arguments)
-  length = Math.min(lengthArray...)
-  for i in [0...length]
-    arr[i] for arr in arguments
+        return @unsignedCell[0] * @waitUnit
+    audio: (n) ->
+        @signedCell[0] = n
+        if indexFrequ
+            n = @signedCell[0]
+            l = frequencies.length # (12)
+            a = (n % l + l) % l
+            b = Math.floor(n / l)
+            return frequencies[a] * Math.pow(2, b)
+        return @signedCell[0]
 
 ### CLASS ###
 structs = {}
@@ -50,21 +68,21 @@ class structs.Register
             @array = new Int8Array  8
             @type  = 8
         # index of the cell that have been modified
-        @modifed = null
+        @lastEdit = null
     
-    _modif: (i) -> @modified = CONVERTER.uint(i) % @type
+    _modif: (i) -> @lastEdit = CONVERTER.uint(i) % @type
 
     # access the array
     get: (i) -> @array[CONVERTER.uint(i) % @type]
     set: (i, x) -> 
         @_modif i
-        @array[@edited] = x
+        @array[@lastEdit] = x
     incr: (i) -> 
         @_modif i
-        ++@array[@edited]
+        ++@array[@lastEdit]
     decr: (i) ->
         @_modif i
-        --@array[@edited]
+        --@array[@lastEdit]
 
 class structs.Tape
     constructor: (type) ->
@@ -78,9 +96,9 @@ class structs.Tape
             @array = new Int8Array 0x100
             @type  = 8
         # index of the cell that have been modified
-        @modifed = null
+        @lastEdit = null
     
-    _modif: (i) -> @modified = CONVERTER.uint i
+    _modif: (i) -> @lastEdit = CONVERTER.uint i
     
     # make a register for a function
     makeReg: (params) -> 
@@ -93,13 +111,13 @@ class structs.Tape
     get: (i) -> @array[CONVERTER.uint i]
     set: (i, x) -> 
         @_modif i
-        @array[@edited] = x
+        @array[@lastEdit] = x
     incr: (i) -> 
         @_modif i
-        ++@array[@edited]
+        ++@array[@lastEdit]
     decr: (i) ->
         @_modif i
-        --@array[@edited]
+        --@array[@lastEdit]
 
 ### OPERATORS ###
 op =
@@ -145,15 +163,21 @@ actions = {}
 
 # wait the given number of milliseconds before continuing
 actions.WAIT = (v) ->
+    # tape 16-bits : milliseconds
+    # tape  8-bits : seconds
     new Promise (resolve) ->
-        window.setTimeout resolve, CONVERTER.uint(v)
+        window.setTimeout resolve, CONVERTER.wait(v)
 
 # play a bell sound of given note
-actions.BELL = (v) -> 
-    PLAY_SOUND CONVERTER.audio v
+actions.BELL = (v) ->
+    # tape 16-bits : full range of frequencies
+    # tape  8-bits : indexed frequencies
+    PLAY_SOUND CONVERTER.audio frequ
 
 # print the character in the console
 actions.PRINT = (v) ->
+    # tape 16-bits : UTF-8
+    # tape  8-bits : ASCII
     ADD_CHAR String.fromCharCode(CONVERTER.uint v)
 
 ### NODES TYPES ###
@@ -186,7 +210,8 @@ class types.Program extends Node
         # generate a new tape using the definition provided
         @tape = new structs.Tape @def
         # provide a pointer to the program to every node of the tree
-        func.link @ for name, func of @funcs
+        for name of @funcs
+            @funcs[name].link @
 
     string: (tabs) -> "PROGRAM #{@def}:\n" + stringBlock(0, @funcs)
     run: (...params) -> @funcs[null].run @, params
@@ -261,6 +286,13 @@ class types.Variable extends Node
         if @useReg then reg.decr index else @program.tape.decr index
         return null
 
+    # special set value for strings
+    set_str: (reg, text) ->
+        index = await @index reg
+        array = if @useReg then reg else @program.tape
+        for i in [0..text.length]
+            array.set(index+i, text.charCodeAt(i))
+
 
 # change the value of a cell
 class types.Assign extends Node
@@ -274,9 +306,8 @@ class types.Assign extends Node
         strTabs(tabs) + "PUT:\n" + strNode(tabs+1, @val)
     
     run: (reg) ->
-        ind = @var.index reg
         val = await @val.run?(reg) ? @val
-        @var.set ind, val
+        @var.set reg, val
 
 
 class types.SelfAssign extends Node
@@ -308,6 +339,13 @@ class types.Decrement extends Node
     string: (tabs) -> strTabs(tabs) + "DECREMENT:\n" + @var.string(tabs+1)
     run: (reg) -> await @var.decr reg
 
+class types.StringAssign extends Node
+    constructor: (@var, @text) -> super()
+    link: (@program, @func) -> @var.link?(@program, @func)
+    string: (tabs) -> strTabs(tabs) + "ASSIGN STRING '#{text}':\n" + @var.string(tabs+1)
+    run: (reg) -> await @var.set_str(reg, @text)
+
+
 # do an action
 class types.Action extends Node
     constructor: (@act, @val) ->
@@ -338,10 +376,14 @@ class types.If extends Node
     
     string: (tabs) ->
         str = strTabs(tabs) + "IF:\n"
-        for [cond, block] in zip(@conds, @blocks)
-            str += if cond?
-            then strTabs(tabs+1) + "ON CONDITION:\n" + cond.string(tabs+2) + strTabs(tabs+1) + "DO:\n"
-            else strTabs(tabs+1) + "NO CONDITION DO:\n"
+        i = 0
+        while i < @conds.length
+            cond  = @conds[i]
+            block = @blocks[i++]
+            if cond != true # condition declared
+                str += strTabs(tabs+1) + "ON CONDITION:\n" + cond.string(tabs+2) + strTabs(tabs+1) + "DO:\n"
+            else # no condition
+                str += strTabs(tabs+1) + "NO CONDITION DO:\n"
             str += stringBlock(tabs+2, block)
         return str
     
@@ -408,7 +450,7 @@ class types.Call extends Node
     link: (@program, @func) ->
         for name of @program.funcs
             @call = @program.funcs[name] if name == @name
-        if @call == null then console.log "function not found !"
+        unless @call? then console.log "function #{@name} not found !"
         @params.splice @program.def, @params.length
         for param in @params
             param.link?(@program, @func)
