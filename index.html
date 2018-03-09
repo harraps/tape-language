@@ -1,49 +1,59 @@
 <!DOCTYPE html>
-<head>
-    
+<head lang="en">
+    <title>TAPE LANG</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- stylesheets -->
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="lib/codemirror.css">
+    <!--THEMES-->
+    <link rel="stylesheet" href="theme/3024-day.css">
+    <link rel="stylesheet" href="theme/3024-night.css">
 </head>
 <body>
-    <textarea id="program" rows="20" cols="80" style="white-space: pre-line;">
-# define the type of tape: 8-bits or 16-bits
-[8]
-# main function...
-{
-    @0 = "Hello World!".
+    <div class="container">
+        <div class="row mt-2">
+            <div class="col-md-5 col-sm-12">
+                <!-- EDITOR -->
+                <div id="editor"></div>
+            </div>
+            <div class="col-md-7 col-sm-12">
+                <!-- MEMORY -->
+                <div id="memory"></div>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-5 col-sm-12">
+                <!-- BUTTONS -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="btn-group" data-toggle="buttons">
+                            <button id="run"    type="button" class="btn" onclick="RUN()"           >RUN</button>
+                            <button id="style"  type="button" class="btn" onclick="TOGGLE_STYLE()"  >LIGHT</button>
+                            <button id="values" type="button" class="btn" onclick="TOGGLE_DISPLAY()">DECIMAL</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7 col-sm-12">
+                <div class="card">
+                    <!-- OUTPUT -->
+                    <div id="output" class="card-body"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap -->
+    <script src="js/jquery-3.0.0.slim.min.js"></script>
+    <script src="js/popper.min.js"           ></script>
+    <script src="js/bootstrap.min.js"        ></script>
 
-    $0 < 12 [
-        (%) 5.
-        (&) @$0.
-        $0 = $0 + 1.
-    ]
-}
-    </textarea>
-    <br/>
-    <button type="button" onclick="run()"  >RUN</button>
-    <button type="button" onclick="parse()">PARSE</button>
-    <div id="output" ></div>
+    <!-- CodeMirror -->
+    <script src="lib/codemirror.js"></script>
 
-    <!-- order matters ! -->
+    <!-- TAPE LANG -->
     <script src="display.js"   ></script>
     <script src="definition.js"></script>
     <script src="tape.js"      ></script>
-
-    <script>
-        // parse the program
-        function parse() {
-            // get program
-            program_src = div_program.value;
-            tape.parse(program_src);
-            console.log(TAPE.program);
-        }
-        // parse and run the program
-        function run() {
-            // clean console output
-            div_output.textContent = "";
-
-            // get program
-            program_src = div_program.value;
-            tape.parse(program_src);
-            TAPE.program.run();
-        }
-    </script>
 </body>

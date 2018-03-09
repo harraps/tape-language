@@ -45,7 +45,7 @@ CONVERTER =
         return @unsignedCell[0] * @waitUnit
     audio: (n) ->
         @signedCell[0] = n
-        if indexFrequ
+        if @indexFrequ
             n = @signedCell[0]
             l = frequencies.length # (12)
             a = (n % l + l) % l
@@ -67,22 +67,18 @@ class structs.Register
         else
             @array = new Int8Array  8
             @type  = 8
-        # index of the cell that have been modified
-        @lastEdit = null
     
-    _modif: (i) -> @lastEdit = CONVERTER.uint(i) % @type
-
     # access the array
     get: (i) -> @array[CONVERTER.uint(i) % @type]
     set: (i, x) -> 
-        @_modif i
-        @array[@lastEdit] = x
+        i = CONVERTER.uint(i) % @type
+        @array[i] = x
     incr: (i) -> 
-        @_modif i
-        ++@array[@lastEdit]
+        i = CONVERTER.uint(i) % @type
+        ++@array[i]
     decr: (i) ->
-        @_modif i
-        --@array[@lastEdit]
+        i = CONVERTER.uint(i) % @type
+        --@array[i]
 
 class structs.Tape
     constructor: (type) ->
@@ -95,10 +91,6 @@ class structs.Tape
         else
             @array = new Int8Array 0x100
             @type  = 8
-        # index of the cell that have been modified
-        @lastEdit = null
-    
-    _modif: (i) -> @lastEdit = CONVERTER.uint i
     
     # make a register for a function
     makeReg: (params) -> 
@@ -110,14 +102,15 @@ class structs.Tape
     # access the array
     get: (i) -> @array[CONVERTER.uint i]
     set: (i, x) -> 
-        @_modif i
-        @array[@lastEdit] = x
+        i = CONVERTER.uint i
+        @array[i] = x
+        UPDATE_CELL i, x
     incr: (i) -> 
-        @_modif i
-        ++@array[@lastEdit]
+        i = CONVERTER.uint i
+        UPDATE_CELL i, ++@array[i]
     decr: (i) ->
-        @_modif i
-        --@array[@lastEdit]
+        i = CONVERTER.uint i
+        UPDATE_CELL i, --@array[i]
 
 ### OPERATORS ###
 op =
@@ -172,7 +165,7 @@ actions.WAIT = (v) ->
 actions.BELL = (v) ->
     # tape 16-bits : full range of frequencies
     # tape  8-bits : indexed frequencies
-    PLAY_SOUND CONVERTER.audio frequ
+    PLAY_SOUND CONVERTER.audio v
 
 # print the character in the console
 actions.PRINT = (v) ->
