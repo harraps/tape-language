@@ -77,7 +77,7 @@ GLOBAL.PLAY_SOUND = (pitch) ->
 GLOBAL.CLEAN = ->
     # clean memory display
     for i in [0..255]
-        cells[i].innerHTML = ''
+        cells[i].innerHTML = '0'
     # clean console output
     div_output.textContent = ""
 
@@ -148,4 +148,3 @@ GLOBAL.TOGGLE_DISPLAY = ->
             when 2 then ""
         for i in [0..255]
             cells[i].innerHTML = value
-    

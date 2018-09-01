@@ -1,110 +1,6 @@
-/* 
-    lexical grammar
-
-    postfix tokens by the syntax type:
-    1 : WORDS
-    2 : ASCII
-    3 : SYMBOLS
+/*
+  parser
 */
-
-%lex
-%options flex
-
-%%
-
-\s+           {/* skip white space */}
-("#"|"❦").*  {/* ignore comments  */}
-"#(".*")#"    {/* ignore comments  */}
-"☙".*"❧"    {/* ignore comments  */}
-
-"USE"\s*"8"\s*"BITS"|"use"\s*"8"\s*"bits"|"[8]"   return 'DEFINE_8';
-"USE"\s*"16"\s*"BITS"|"[16]" return 'DEFINE_16';
-
-[0-9]+\b           return 'DECIMAL';
-"0b"[0-1]+\b       return 'BINARY';
-"0o"[0-7]+\b       return 'OCTAL';
-"0x"[0-9a-fA-F]+\b return 'HEXADECIMAL';
-"'"."'"            return 'CHARACTER';
-
-"\"".*"\"" return 'STRING';
-"❝".*"❞"   return 'STRING';
-
-"(" return '(';
-")" return ')';
-"," return ',';
-
-"MAIN"|"main"          return 'MAIN';
-"RETURN"|"return"|"*>" return 'RETURN';
-
-"DO"|"do"   return 'DO';
-"END"|"end" return 'END';
-
-"IF"|"if"                   return 'IF';
-"ELSE"\s*"IF"|"else"\s*"if" return 'ELSEIF';
-"ELSE"|"else"               return 'ELSE';
-"?" return '?';
-"{" return '{';
-"}" return '}';
-
-"WHILE"|"while" return 'WHILE';
-"LOOP"|"loop"   return 'LOOP';
-"RETRY"|"retry" return 'RETRY';
-"STOP"|"stop"   return 'STOP';
-"["  return '[';
-"]"  return ']';
-"<|" return '<|';
-"|>" return '|>';
-
-":="|"=" return '=';
-"."|";"  return '.';
-
-"WAIT"|"wait"|"(%)"|"⧗"   return 'WAIT';
-"BELL"|"bell"|"(*)"|"♫"   return 'BELL';
-"PRINT"|"print"|"(&)"|"¶"  return 'PRINT';
-
-"AT"|"at"|"@"   return 'AT';
-"REG"|"reg"|"$" return 'REG';
-
-"+"             return '+';
-"-"             return '-';
-"*"|"×"         return '*';
-"/"|"÷"         return '/';
-"%"|"MOD"|"mod" return '%';
-
-"++"|"⭜" return 'INCR';
-"--"|"⭝" return 'DECR';
-
-"NOT"|"not"|"!"|"¬"     return 'NOT';
-"AND"|"and"|"&&"|"∧"    return 'AND';
-"OR"|"or"|"||"|"∨"      return 'OR';
-"XOR"|"xor"|"^^"|"⊕"   return 'XOR';
-"NAND"|"nand"|"!&"|"⊼"  return 'NAND';
-"NOR"|"nor"|"!|"|"⊽"    return 'NOR';
-"XNOR"|"xnor"|"!^"|"≡"  return 'XNOR';
-
-"==" return '==';
-"!=" return '!=';
-">"  return '>';
-"<"  return '<';
-">=" return '>=';
-"<=" return '<=';
-
-"~"  return 'BNOT';
-"&"  return 'BAND';
-"|"  return 'BOR';
-"^"  return 'BXOR';
-"~&" return 'BNAND';
-"~|" return 'BNOR';
-"~^" return 'BXNOR';
-"<<" return '<<';
-">>" return '>>';
-
-[A-Za-z_\u00A0-\uFFFF]+ return 'NAME';
-
-<<EOF>> return 'EOF';
-.       return 'INVALID';
-
-/lex
 
 /* operator associations and precedence */
 %nonassoc '='
@@ -120,8 +16,8 @@
 
 %%
 
-program 
-    : def funcs EOF { return TAPE.formaters._program($1, $2); }
+program
+    : def funcs EOF { return TAPE.formater.program($1, $2); }
     ;
 
 def
@@ -130,21 +26,21 @@ def
     ;
 
 funcs
-    : 
+    :
     | funcs func { $$ = TAPE.formaters.namedGather($1, $2); }
     ;
 func
     : NAME '{' instrs '}' { $$ = new TAPE.types.Function($1  , $3); }
     |      '{' instrs '}' { $$ = new TAPE.types.Function(null, $2); }
     | NAME DO  instrs END { $$ = new TAPE.types.Function($1  , $3); }
-    | MAIN     instrs END { $$ = new TAPE.types.Function(null, $2); }      
+    | MAIN     instrs END { $$ = new TAPE.types.Function(null, $2); }
     ;
 
 instrs
     :              { $$ = []; }
     | instrs instr { $$ = TAPE.formaters.gather($1, $2); }
     ;
-instr 
+instr
     : var '=' expr '.' { $$ = new TAPE.types.Assign($1, $3); }
     | var '=' text '.' { $$ = new TAPE.types.StringAssign($1, $3); }
     | RETURN  expr '.' { $$ = new TAPE.types.Return($2); }
@@ -166,12 +62,12 @@ instr
     | '<|'  { $$ = new TAPE.types.Break(false, false); }
     | '|>'  { $$ = new TAPE.types.Break(true , false); }
     ;
-elses1 
+elses1
     : END
     | ELSE           instrs END    { $$ = TAPE.formaters._else($2); }
     | ELSEIF expr DO instrs elses1 { $$ = TAPE.formaters._elseif($2, $4, $5); }
     ;
-elses2 
+elses2
     :
     |      '{' instrs '}'        { $$ = TAPE.formaters._else($2); }
     | expr '{' instrs '}' elses2 { $$ = TAPE.formaters._elseif($1, $3, $5); }
@@ -181,7 +77,7 @@ var
     | REG number { $$ = new TAPE.types.Variable(true , $2); }
     ;
 
-expr 
+expr
     : number       { $$ = $1; }
     | var          { $$ = $1; }
     | '(' expr ')' { $$ = $2; }

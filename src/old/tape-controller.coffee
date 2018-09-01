@@ -67,13 +67,13 @@ class structs.Register
         else
             @array = new Int8Array  8
             @type  = 8
-    
+
     # access the array
     get: (i) -> @array[CONVERTER.uint(i) % @type]
-    set: (i, x) -> 
+    set: (i, x) ->
         i = CONVERTER.uint(i) % @type
         @array[i] = x
-    incr: (i) -> 
+    incr: (i) ->
         i = CONVERTER.uint(i) % @type
         ++@array[i]
     decr: (i) ->
@@ -91,21 +91,21 @@ class structs.Tape
         else
             @array = new Int8Array 0x100
             @type  = 8
-    
+
     # make a register for a function
-    makeReg: (params) -> 
+    makeReg: (params) ->
         reg = new structs.Register @type
         length = Math.min @type, params.length
         reg.set(i, params[i]) for i in [0...length]
         return reg
-    
+
     # access the array
     get: (i) -> @array[CONVERTER.uint i]
-    set: (i, x) -> 
+    set: (i, x) ->
         i = CONVERTER.uint i
         @array[i] = x
         UPDATE_CELL i, x
-    incr: (i) -> 
+    incr: (i) ->
         i = CONVERTER.uint i
         UPDATE_CELL i, ++@array[i]
     decr: (i) ->
@@ -126,7 +126,7 @@ op.ADD = (a, b) -> CONVERTER.int(a + b)
 op.SUB = (a, b) -> CONVERTER.int(a - b)
 op.MUL = (a, b) -> CONVERTER.int(a * b)
 op.DIV = (a, b) -> CONVERTER.int(a / b) # if b == 0 -> 0
-op.MOD = (a, b) -> CONVERTER.int(a % b) 
+op.MOD = (a, b) -> CONVERTER.int(a % b)
 # logical
 op.AND  = (a, b) -> if  a &&  b then 1 else 0
 op.OR   = (a, b) -> if  a ||  b then 1 else 0
@@ -137,10 +137,10 @@ op.XNOR = (a, b) -> if !a != !b then 0 else 1
 # bitwise
 op.BAND   = (a, b) -> CONVERTER.int(a & b)
 op.BOR    = (a, b) -> CONVERTER.int(a | b)
-op.BXOR   = (a, b) -> CONVERTER.int(a ^ b) 
+op.BXOR   = (a, b) -> CONVERTER.int(a ^ b)
 op.BNAND  = (a, b) -> CONVERTER.int(~(a & b))
 op.BNOR   = (a, b) -> CONVERTER.int(~(a | b))
-op.BXNOR  = (a, b) -> CONVERTER.int(~(a ^ b)) 
+op.BXNOR  = (a, b) -> CONVERTER.int(~(a ^ b))
 op.LSHIFT = (a, b) -> CONVERTER.int(a << b)
 op.RSHIFT = (a, b) -> CONVERTER.int(a >> b)
 # comparator
@@ -177,7 +177,7 @@ actions.PRINT = (v) ->
 types = {}
 
 # classes that define the nodes of our AST
-class Node 
+class Node
     link: () -> console.log "not implemented"
     run:  () -> console.log "not implemented"
     string: (tabs) -> strTabs(tabs) + "[UNDEFINED!]\n"
@@ -196,7 +196,7 @@ strNode = (tabs, n) ->
 
 # program
 class types.Program extends Node
-    constructor: (@def, @funcs) -> 
+    constructor: (@def, @funcs) ->
         super()
         # correct the definition if there was an error
         if @def != 8 and @def != 16 then @def = 8
@@ -245,7 +245,7 @@ class types.Return extends Node
         strTabs(tabs) + "RETURN:\n" + strNode(tabs+1, @val)
 
     run: (reg) -> @func.returnValue = await @val.run?(reg) ? @val
-        
+
 
 # access a variable
 class types.Variable extends Node
@@ -259,7 +259,7 @@ class types.Variable extends Node
     index: (reg) -> await @ind.run?(reg) ? @ind
 
     run: (reg) -> await @get reg
-        
+
     get: (reg) -> # get the value of the variable
         index = await @index reg
         return if @useReg then reg.get index else @program.tape.get index
@@ -273,7 +273,7 @@ class types.Variable extends Node
         index = await @index reg
         if @useReg then reg.incr index else @program.tape.incr index
         return null
-    
+
     decr: (reg) ->
         index = await @index reg
         if @useReg then reg.decr index else @program.tape.decr index
@@ -283,7 +283,7 @@ class types.Variable extends Node
     set_str: (reg, text) ->
         index = await @index reg
         array = if @useReg then reg else @program.tape
-        for i in [0..text.length]
+        for i in [0...text.length]
             array.set(index+i, text.charCodeAt(i))
 
 
@@ -294,10 +294,10 @@ class types.Assign extends Node
         @var.link?(@program, @func)
         @val.link?(@program, @func)
 
-    string: (tabs) -> 
-        strTabs(tabs) + "IN:\n"  + strNode(tabs+1, @var) + 
+    string: (tabs) ->
+        strTabs(tabs) + "IN:\n"  + strNode(tabs+1, @var) +
         strTabs(tabs) + "PUT:\n" + strNode(tabs+1, @val)
-    
+
     run: (reg) ->
         val = await @val.run?(reg) ? @val
         @var.set reg, val
@@ -325,7 +325,7 @@ class types.Increment extends Node
     link: (@program, @func) -> @var.link?(@program, @func)
     string: (tabs) -> strTabs(tabs) + "INCREMENT:\n" + @var.string(tabs+1)
     run: (reg) -> await @var.incr reg
-    
+
 class types.Decrement extends Node
     constructor: (@var) -> super()
     link: (@program, @func) -> @var.link?(@program, @func)
@@ -359,14 +359,14 @@ class types.If extends Node
         super()
         if @conds.length != @blocks.length
             console.log "error in if statement"
-    
+
     link: (@program, @func) ->
         for cond in @conds
             cond.link?(@program, @func)
         for block in @blocks
             if block?
                 instr.link?(@program, @func) for instr in block
-    
+
     string: (tabs) ->
         str = strTabs(tabs) + "IF:\n"
         i = 0
@@ -379,7 +379,7 @@ class types.If extends Node
                 str += strTabs(tabs+1) + "NO CONDITION DO:\n"
             str += stringBlock(tabs+2, block)
         return str
-    
+
     run: (reg) ->
         i = 0
         while i < @conds.length
@@ -461,7 +461,7 @@ class types.Monadic extends Node
     string: (tabs) -> strTabs(tabs) + "MONADIC #{op.getName(@op)}:\n" + @expr.string(tabs+1)
 
     run: (reg) ->
-        val = await @expr.run?(reg) ? @expr 
+        val = await @expr.run?(reg) ? @expr
         @op val
 
 class types.Dyadic extends Node
@@ -472,13 +472,13 @@ class types.Dyadic extends Node
         @right.link?(@program, @func)
 
     string: (tabs) ->
-        strTabs(tabs  ) + "DYADIC #{op.getName(@op)}:\n" + 
+        strTabs(tabs  ) + "DYADIC #{op.getName(@op)}:\n" +
         strTabs(tabs+1) + "LEFT:\n"  + strExpr(tabs+2, @left ) +
         strTabs(tabs+1) + "RIGHT:\n" + strExpr(tabs+2, @right)
-    
+
     run: (reg) ->
         left  = await @left.run?(reg)  ? @left
-        right = await @right.run?(reg) ? @right 
+        right = await @right.run?(reg) ? @right
         @op left, right
 
 ### FORMATERS ###
