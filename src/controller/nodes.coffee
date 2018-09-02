@@ -79,24 +79,39 @@ class node.Variable extends Node
 	run:   (reg) -> await @get reg
 	get:   (reg) -> # get the value of the variable
 		index = await @index reg
-		return if @useReg then reg.get index else @program.tape.get index
+		return if @useReg then reg.get index
+		else         @program.tape.get index
+
 	set: (reg, val) ->
 		index = await @index reg
-		if @useReg then reg.set(index, val) else @program.tape.set(index, val)
+		if @useReg then reg.set index, val
+		else  @program.tape.set index, val
 		return null
+
 	incr: (reg) ->
 		index = await @index reg
-		if @useReg then reg.incr index else @program.tape.incr index
+		if @useReg then reg.incr index
+		else  @program.tape.incr index
 		return null
+
 	decr: (reg) ->
 		index = await @index reg
-		if @useReg then reg.decr index else @program.tape.decr index
+		if @useReg then reg.decr index
+		else  @program.tape.decr index
 		return null
+
+	repl: (reg, val, op) ->
+		index = await @index reg
+		if @useReg then reg.repl index, val, op
+		else  @program.tape.repl index, val, op
+		return null
+
 	set_str: (reg, text) -> # special set value for strings
 		index = await @index reg
 		array = if @useReg then reg else @program.tape
 		for i in [0...text.length]
-			array.set(index+i, text.charCodeAt(i))
+			array.set index+i, text.charCodeAt(i)
+	
 	string: (tabs) ->
 		str = stringTabs(tabs) + if @useReg then "REGISTER:\n" else "TAPE:\n"
 		return str + str_node tabs+1, @ind
@@ -124,11 +139,8 @@ class node.SelfAssign extends Node
 		@var.link? @program,@func
 		@val.link? @program,@func
 	run: (reg) ->
-		ind  = @var.index reg
-		val1 = @var.get   reg
-		val2 = await @val.run?(reg) ? @val
-		val3 = @op val1, val2
-		@var.set ind, @op(val1, val2)
+		val = await @val.run?(reg) ? @val
+		@var.repl reg, val, @op
 	string: (tabs) ->
 		str_tabs(tabs) + "CHANGE:\n"                + @var.string(tabs+1) +
 		str_tabs(tabs) + "BY #{op.getName(@op)}:\n" + @val.string(tabs+1)

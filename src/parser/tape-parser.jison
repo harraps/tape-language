@@ -41,8 +41,9 @@ instrs
     | instrs instr { $$ = TAPE.formater.gather($1, $2); }
     ;
 instr
-    : var '=' expr '.' { $$ = new TAPE.node.Assign($1, $3); }
-    | var '=' text '.' { $$ = new TAPE.node.StringAssign($1, $3); }
+    : var    '=' expr '.' { $$ = new TAPE.node.Assign      ($1, $3);     }
+    | var    '=' text '.' { $$ = new TAPE.node.StringAssign($1, $3);     }
+	| var op '=' expr '.' { $$ = new TAPE.node.SelfAssign  ($1, $4, $2); }
     | RETURN  expr '.' { $$ = new TAPE.node.Return($2); }
     | identifier '(' params ')' '.' { $$ = new TAPE.node.Call($1, $3); }
     | identifier     params     '.' { $$ = new TAPE.node.Call($1, $2); }
@@ -53,8 +54,8 @@ instr
     | PRINT expr '.' { $$ = new TAPE.node.Action(TAPE.action.print, $2); }
     | IF  expr DO  instrs     elses1 { $$ = TAPE.formater.if_($2, $4, $5); }
     | '?' expr '{' instrs '}' elses2 { $$ = TAPE.formater.if_($2, $4, $6); }
-    | WHILE expr DO  instrs END      { $$ = TAPE.formater.loop(true , $2   , $4); }
-    |       expr '[' instrs ']'      { $$ = TAPE.formater.loop(false, $1   , $3); }
+    | WHILE expr DO  instrs END      { $$ = TAPE.formater.loop(true , $2  , $4); }
+    |       expr '[' instrs ']'      { $$ = TAPE.formater.loop(false, $1  , $3); }
     | LOOP instrs END                { $$ = TAPE.formater.loop(true , true, $2); }
     | '['  instrs ']'                { $$ = TAPE.formater.loop(false, true, $2); }
     | RETRY { $$ = new TAPE.node.Break(false, true ); }
@@ -88,31 +89,8 @@ expr
 	| BNOT expr              { $$ = new TAPE.node.Monadic(TAPE.op.bnot, $2); }
 	| '+' expr %prec UNPLUS  { $$ = new TAPE.node.Monadic(TAPE.op.abs , $2); }
 	| '-' expr %prec UNMINUS { $$ = new TAPE.node.Monadic(TAPE.op.neg , $2); }
-    | expr '+'   expr { $$ = new TAPE.node.Dyadic(TAPE.op.add   , $1, $3); }
-    | expr '-'   expr { $$ = new TAPE.node.Dyadic(TAPE.op.sub   , $1, $3); }
-    | expr '*'   expr { $$ = new TAPE.node.Dyadic(TAPE.op.mul   , $1, $3); }
-    | expr '/'   expr { $$ = new TAPE.node.Dyadic(TAPE.op.div   , $1, $3); }
-    | expr '%'   expr { $$ = new TAPE.node.Dyadic(TAPE.op.mod   , $1, $3); }
-    | expr AND   expr { $$ = new TAPE.node.Dyadic(TAPE.op.and_  , $1, $3); }
-    | expr OR    expr { $$ = new TAPE.node.Dyadic(TAPE.op.or_   , $1, $3); }
-    | expr XOR   expr { $$ = new TAPE.node.Dyadic(TAPE.op.xor   , $1, $3); }
-    | expr NAND  expr { $$ = new TAPE.node.Dyadic(TAPE.op.nand  , $1, $3); }
-    | expr NOR   expr { $$ = new TAPE.node.Dyadic(TAPE.op.nor   , $1, $3); }
-    | expr XNOR  expr { $$ = new TAPE.node.Dyadic(TAPE.op.xnor  , $1, $3); }
-    | expr BAND  expr { $$ = new TAPE.node.Dyadic(TAPE.op.band  , $1, $3); }
-    | expr BOR   expr { $$ = new TAPE.node.Dyadic(TAPE.op.bor   , $1, $3); }
-    | expr BXOR  expr { $$ = new TAPE.node.Dyadic(TAPE.op.bxor  , $1, $3); }
-    | expr BNAND expr { $$ = new TAPE.node.Dyadic(TAPE.op.bnand , $1, $3); }
-    | expr BNOR  expr { $$ = new TAPE.node.Dyadic(TAPE.op.bnor  , $1, $3); }
-    | expr BXNOR expr { $$ = new TAPE.node.Dyadic(TAPE.op.bxnor , $1, $3); }
-    | expr '<<'  expr { $$ = new TAPE.node.Dyadic(TAPE.op.lshift, $1, $3); }
-    | expr '>>'  expr { $$ = new TAPE.node.Dyadic(TAPE.op.rshift, $1, $3); }
-    | expr '=='  expr { $$ = new TAPE.node.Dyadic(TAPE.op.equ   , $1, $3); }
-    | expr '!='  expr { $$ = new TAPE.node.Dyadic(TAPE.op.dif   , $1, $3); }
-    | expr '>'   expr { $$ = new TAPE.node.Dyadic(TAPE.op.grt   , $1, $3); }
-    | expr '<'   expr { $$ = new TAPE.node.Dyadic(TAPE.op.lst   , $1, $3); }
-    | expr '>='  expr { $$ = new TAPE.node.Dyadic(TAPE.op.gte   , $1, $3); }
-    | expr '<='  expr { $$ = new TAPE.node.Dyadic(TAPE.op.lte   , $1, $3); }
+	| expr op   expr { $$ = new TAPE.node.Dyadic($2, $1, $3); }
+	| expr comp expr { $$ = new TAPE.node.Dyadic($2, $1, $3); }
     ;
 identifier
     : NAME { $$ = yytext; }
@@ -140,3 +118,32 @@ number
 text
     : STRING { $$ = yytext.slice(1, -1); }
     ;
+comp
+	: '=='  { $$ = TAPE.op.equ; }
+	| '!='  { $$ = TAPE.op.dif; }
+	| '>'   { $$ = TAPE.op.grt; }
+	| '<'   { $$ = TAPE.op.lst; }
+	| '>='  { $$ = TAPE.op.gte; }
+	| '<='  { $$ = TAPE.op.lte; }
+	;
+op
+	: '+'   { $$ = TAPE.op.add   ; }
+    | '-'   { $$ = TAPE.op.sub   ; }
+    | '*'   { $$ = TAPE.op.mul   ; }
+    | '/'   { $$ = TAPE.op.div   ; }
+    | '%'   { $$ = TAPE.op.mod   ; }
+    | AND   { $$ = TAPE.op.and_  ; }
+    | OR    { $$ = TAPE.op.or_   ; }
+    | XOR   { $$ = TAPE.op.xor   ; }
+    | NAND  { $$ = TAPE.op.nand  ; }
+    | NOR   { $$ = TAPE.op.nor   ; }
+    | XNOR  { $$ = TAPE.op.xnor  ; }
+    | BAND  { $$ = TAPE.op.band  ; }
+    | BOR   { $$ = TAPE.op.bor   ; }
+    | BXOR  { $$ = TAPE.op.bxor  ; }
+    | BNAND { $$ = TAPE.op.bnand ; }
+    | BNOR  { $$ = TAPE.op.bnor  ; }
+    | BXNOR { $$ = TAPE.op.bxnor ; }
+    | '<<'  { $$ = TAPE.op.lshift; }
+    | '>>'  { $$ = TAPE.op.rshift; }
+	;

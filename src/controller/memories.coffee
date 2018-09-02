@@ -23,6 +23,9 @@ class memory.Register
 	decr: (i) ->
 		i = TAPE.corrector.unsign(i) % @type
 		--@array[i]
+	repl: (i, x, op) ->
+		i = TAPE.corrector.unsign(i) % @type
+		@array[i] = op @array[i], x
 
 class memory.Tape
 	constructor: (type) ->
@@ -56,3 +59,8 @@ class memory.Tape
 	decr: (i) ->
 		i = TAPE.corrector.unsign i
 		TAPE.updateCell? i, --@array[i]
+	repl: (i, x, op) ->
+		i = TAPE.corrector.unsign i
+		y = op @array[i], x
+		@array[i] = y
+		TAPE.updateCell? i, y
