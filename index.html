@@ -1,59 +1,66 @@
 <!DOCTYPE html>
-<head lang="en">
-    <title>TAPE LANG</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <!-- stylesheets -->
-    <!--link rel="stylesheet" href="css/bootstrap.min.css"-->
-    <!--link rel="stylesheet" href="lib/codemirror.css"-->
-    <!--THEMES-->
-    <!--link rel="stylesheet" href="theme/3024-day.css"-->
-    <!--link rel="stylesheet" href="theme/3024-night.css"-->
-</head>
-<body>
-    <div class="container">
-        <div class="row mt-2">
-            <div class="col-md-5 col-sm-12">
-                <!-- EDITOR -->
-                <div id="editor"></div>
-            </div>
-            <div class="col-md-7 col-sm-12">
-                <!-- MEMORY -->
-                <div id="memory"></div>
-            </div>
-        </div>
-        <div class="row mt-2">
-            <div class="col-md-5 col-sm-12">
-                <!-- BUTTONS -->
-                <div class="card">
-                    <div class="card-body">
-                        <div class="btn-group" data-toggle="buttons">
-                            <button id="run"    type="button" class="btn" onclick="RUN()"           >RUN</button>
-                            <button id="style"  type="button" class="btn" onclick="TOGGLE_STYLE()"  >LIGHT</button>
-                            <button id="values" type="button" class="btn" onclick="TOGGLE_DISPLAY()">DECIMAL</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-7 col-sm-12">
-                <div class="card">
-                    <!-- OUTPUT -->
-                    <div id="output" class="card-body"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+<html lang="en">
+	<head>
+		<!-- metadata -->
+	    <title>TAPE!</title>
+	    <meta charset="utf-8">
+	    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <!-- Bootstrap -->
-    <script src="js/jquery-3.0.0.slim.min.js"></script>
-    <script src="js/popper.min.js"           ></script>
-    <script src="js/bootstrap.min.js"        ></script>
+		<!-- CodeMirror -->
+		<link rel="stylesheet" href="lib/codemirror.css">
+		<link rel="stylesheet" href="theme/base16-light.css">
+		<link rel="stylesheet" href="theme/base16-dark.css">
+		<script src="lib/codemirror.js"></script>
 
-    <!-- CodeMirror -->
-    <script src="lib/codemirror.js"></script>
+		<!-- TAPE -->
+	    <link rel="stylesheet" href="css/tape.css">
+	</head>
+	<body>
+		<header>
+			<!-- Title of the page, theme, volume -->
+			<h1>TAPE!</h1>
+			<h3>an esoteric language with a tape</h3>
+		</header>
+		<section>
+			<article>
+				<!-- text editor -->
+				<div id="tape-editor"></div>
+			</article>
+			<aside>
+				<!-- memory view, console, button bar -->
+				<table id="tape-memory" ></table>
+				<div   id="tape-console"></div>
 
-    <!-- TAPE LANG -->
-    <script src="display.js"   ></script>
-    <script src="definition.js"></script>
-    <script src="tape.js"      ></script>
-</body>
+				<div class="controls">
+					<button onClick="TAPE.interface.run()">RUN!</button>
+
+					<button onClick="TAPE.interface.setDisplay('dec' )">DEC</button>
+					<button onClick="TAPE.interface.setDisplay('hexa')">HEXA</button>
+					<button onClick="TAPE.interface.setDisplay('char')">CHAR</button>
+				</div>
+			</aside>
+		</section>
+		<section>
+			<article>
+				<!-- instructions -->
+
+			</article>
+		</section>
+		<footer>
+			<!-- references, technologies -->
+
+		</footer>
+
+		<!-- scripts needs to be at the end of document -->
+		<script>
+			// TODO: remove
+			// my coffeescript doesn't support async for now...
+			function await (p) {
+				return p;
+			}
+		</script>
+		<script src="js/tape-controller.js"></script>
+		<script src="js/tape-parser.js"    ></script>
+		<script src="js/tape-view.js"      ></script>
+	</body>
+</html>

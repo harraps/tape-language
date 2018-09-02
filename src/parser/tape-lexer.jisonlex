@@ -62,9 +62,6 @@
 "/"|"÷"         return '/';
 "%"|"MOD"|"mod" return '%';
 
-"++"|"⭜" return 'INCR';
-"--"|"⭝" return 'DECR';
-
 "NOT"|"not"|"!"|"¬"     return 'NOT';
 "AND"|"and"|"&&"|"∧"    return 'AND';
 "OR"|"or"|"||"|"∨"      return 'OR';
@@ -72,13 +69,6 @@
 "NAND"|"nand"|"!&"|"⊼"  return 'NAND';
 "NOR"|"nor"|"!|"|"⊽"    return 'NOR';
 "XNOR"|"xnor"|"!^"|"≡"  return 'XNOR';
-
-"==" return '==';
-"!=" return '!=';
-">"  return '>';
-"<"  return '<';
-">=" return '>=';
-"<=" return '<=';
 
 "~"  return 'BNOT';
 "&"  return 'BAND';
@@ -89,6 +79,16 @@
 "~^" return 'BXNOR';
 "<<" return '<<';
 ">>" return '>>';
+
+"==" return '==';
+"!=" return '!=';
+">"  return '>';
+"<"  return '<';
+">=" return '>=';
+"<=" return '<=';
+
+"++"|"⭜" return 'INCR';
+"--"|"⭝" return 'DECR';
 
 [A-Za-z_\u00A0-\uFFFF]+ return 'NAME';
 
