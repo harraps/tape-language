@@ -50,37 +50,37 @@ formater = {
 		return new TAPE.node.Call name, params
 
 	callDyadicList: (name, params, param) ->
-	    if params instanceof Array # list of params
-	        if params.name == name # same operator
-	            params.push param
-	            return params
-	        else # different operators
-	            newList = [new TAPE.node.Call(params.name, params), param]
-	            delete params.name
-	            newList.name = name
-	            return newList
-	    else # single param
-	        newList = [params, param]
-	        newList.name = name
-	        return newList
+		if params instanceof Array # list of params
+			if params.name == name # same operator
+				params.push param
+				return params
+			else # different operators
+				newList = [new TAPE.node.Call(params.name, params), param]
+				delete params.name
+				newList.name = name
+				return newList
+		else # single param
+			newList = [params, param]
+			newList.name = name
+			return newList
 
 
 	loop: (type, cond, block) ->
-	    lp = new TAPE.node.Loop(cond, block, type)
+		lp = new TAPE.node.Loop(cond, block, type)
 		# find breaks recursively
-	    find_breaks lp, block
-	    return lp
+		find_breaks lp, block
+		return lp
 
 	# parse number
 	number: (type, value) ->
-	    val = value.substring 2
-	    return switch type
-	        when "decimal"     then parseInt(value)
-	        when "octal"       then parseInt(val,  8)
-	        when "hexadecimal" then parseInt(val, 16)
-	        when "binary"      then parseInt(val,  2)
-	        when "character"   then value.charCodeAt(1)
-	        else 0
+		val = value.substring 2
+		return switch type
+			when "decimal"     then parseInt(value)
+			when "octal"       then parseInt(val,  8)
+			when "hexadecimal" then parseInt(val, 16)
+			when "binary"      then parseInt(val,  2)
+			when "character"   then value.charCodeAt(1)
+			else 0
 }
 
 # helper function to find breaks recursively
