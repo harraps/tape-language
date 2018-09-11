@@ -16,29 +16,24 @@
 	    <link rel="stylesheet" href="css/tape.css">
 	</head>
 	<body>
-		<header>
+		<header class="title">
 			<!-- Title of the page, theme, volume -->
 			<h1>TAPE!</h1>
 			<h3>an esoteric language with a tape</h3>
 		</header>
-		<section>
-			<article>
-				<!-- text editor -->
-				<div id="tape-editor"></div>
-			</article>
-			<aside>
-				<!-- memory view, console, button bar -->
-				<table id="tape-memory" ></table>
-				<div   id="tape-console"></div>
+		<section class="container">
+			<!-- text editor -->
+			<div id="tape-editor"></div>
+			<!-- memory view, console, button bar -->
+			<div   id="tape-console"></div>
+			<div class="controls">
+				<button onClick="TAPE.interface.run()">RUN!</button>
 
-				<div class="controls">
-					<button onClick="TAPE.interface.run()">RUN!</button>
-
-					<button onClick="TAPE.interface.setDisplay('dec' )">DEC</button>
-					<button onClick="TAPE.interface.setDisplay('hexa')">HEXA</button>
-					<button onClick="TAPE.interface.setDisplay('char')">CHAR</button>
-				</div>
-			</aside>
+				<button onClick="TAPE.interface.setDisplay('dec' )">DEC</button>
+				<button onClick="TAPE.interface.setDisplay('hexa')">HEXA</button>
+				<button onClick="TAPE.interface.setDisplay('char')">CHAR</button>
+			</div>
+			<table id="tape-memory"></table>
 		</section>
 		<section>
 			<article>

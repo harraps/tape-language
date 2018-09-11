@@ -26,3 +26,5 @@ options = {
 	smartIndent: true
 }
 TAPE.editor = CodeMirror div_editor, options
+
+TAPE.editor.setSize 500, 500

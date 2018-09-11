@@ -172,6 +172,8 @@
 
   TAPE.editor = CodeMirror(div_editor, options);
 
+  TAPE.editor.setSize(500, 500);
+
   /* INTERFACE */
   /*
   	- execute the program

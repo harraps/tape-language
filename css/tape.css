@@ -1,0 +1,56 @@
+body {
+	display: block;
+	align-items: center;
+}
+
+.title {
+	text-align: center;
+}
+
+.container {
+	display: grid;
+	grid-template-columns: 500px 500px;
+	grid-template-rows:    70px 30px 400px;
+	width: 1000px;
+	margin-left:  auto;
+ 	margin-right: auto;
+}
+
+#tape-editor {
+	grid-row-start: 1;
+	grid-row-end:   4;
+}
+
+#tape-memory {
+	table-layout: fixed;
+	width:  500px;
+	border: 1px black solid;
+}
+
+#tape-memory td {
+	width:      25px;
+	height:     20px;
+	text-align: right;
+}
+
+#tape-console {
+	background: black;
+	color:      white;
+}
+
+.controls button {
+	background: white;
+	color:      black;
+	border: 1px black solid;
+}
+.controls button:hover {
+	background: black;
+	color:      white;
+}
+
+@media only screen and (max-width: 1000px) {
+	.container {
+		display: block !important;
+		width:   500px !important;
+	}
+}
