@@ -63,7 +63,7 @@ TAPE.interface = {
 
 ## LOCAL SCOPE
 
-editor_light = "base16-light"
-editor_dark  = "base16-dark"
+editor_light = "duotone-light"
+editor_dark  = "duotone-dark"
 
 body = document.body

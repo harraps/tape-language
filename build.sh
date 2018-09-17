@@ -6,3 +6,4 @@ cat src/controller/*.coffee | coffee --compile --stdio > js/tape-controller.js
 
 cat src/view/*.coffee | coffee --compile --stdio > js/tape-view.js
 
+coffee --compile src/syntax.coffee

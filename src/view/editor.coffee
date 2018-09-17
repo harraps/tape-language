@@ -2,8 +2,8 @@
 
 ## LOCAL SCOPE
 
-editor_light = "base16-light"
-editor_dark  = "base16-dark"
+editor_light = "duotone-light"
+editor_dark  = "duotone-dark"
 
 div_editor = document.getElementById "tape-editor"
 
@@ -20,7 +20,7 @@ start_program = """
 
 options = {
 	value: start_program
-	mode:  "tape"
+	mode:  {name: "tape"}
 	theme: editor_light
 	lineNumbers: true
 	smartIndent: true
